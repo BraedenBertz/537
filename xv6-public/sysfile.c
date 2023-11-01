@@ -57,15 +57,21 @@ fdalloc(struct file *f)
 // int munmap(void *addr, size_t length)
 int sys_munmap(void)
 {
+    cprintf("In the sys_munmap function in sysfile.c\n");
     int addr;
     int length;
     if (argint(0, &addr) < 0 || argint(1, &length) < 0)
     {
+        cprintf("Error getting the arguments\n");
         return RETURN_ERR;
     }
     // if addr is not a multiple of PAGE_SIZE return -1;
-    if (((int)addr) % PAGE_SIZE != 0)
+    if (((int)addr) % PAGE_SIZE != 0){
+        cprintf("error, addr mod PAGE_SIZE is not 0: addr: %d, PAGE_SIZE: %d\n", (int)addr, PAGE_SIZE);
         return RETURN_ERR;
+    }
+
+    munmap();
     return 0;
 }
 
@@ -106,6 +112,15 @@ int sys_mmap(void)
     if (flags & MAP_FIXED)
         if (((int)addr) >= VIRT_ADDR_END || ((int)addr) < VIRT_ADDR_START)
             return RETURN_ERR;
+
+    if(flags == MAP_PRIVATE)
+        mmapPrivate();
+    else if(flags == MAP_ANONYMOUS)
+        mmapAnonymous();
+    else{
+        cprintf("flag was not private or anonymous, failed\n");
+        return RETURN_ERR;
+    }
     
 
     // in case of a good mmap return the address of the VAS we start at

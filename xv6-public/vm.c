@@ -10,6 +10,19 @@
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
 
+void munmap(){
+  // implement the freeing logic of munmap here
+  cprintf("In vm.c in the munmap method\n");
+}
+
+void mmapPrivate(){
+  cprintf("In vm.c method mmapPrivate\n");
+}
+
+void mmapAnonymous(){
+  cprintf("In vm.c method mmapAnonymous\n");
+}
+
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
 void
