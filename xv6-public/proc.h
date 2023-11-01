@@ -10,6 +10,17 @@ struct cpu {
   struct proc *proc;           // The process running on this cpu or null
 };
 
+struct mmap_desc
+{
+  int numberOfPages;           //how many pages are associated with the mmap
+  int virtualAddress;          //the start of the virtual address
+  int flags;                   //flags associated with this mmap
+  int prot;                    //protection bits
+  int dirty;                   //if this has been written to
+  int shared;                  //if its shared or naw
+  int valid;                   //if this is a valid mmap_desc
+};
+
 extern struct cpu cpus[NCPU];
 extern int ncpu;
 
@@ -49,6 +60,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  struct mmap_desc mmaps[30];
 };
 
 // Process memory is laid out contiguously, low addresses first:

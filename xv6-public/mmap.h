@@ -16,3 +16,5 @@
 
 /* Page size constant */
 #define PAGE_SIZE 4096
+
+const int RETURN_ERR = (int)((void*) -1);
