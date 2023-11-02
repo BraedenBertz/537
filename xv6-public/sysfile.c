@@ -15,6 +15,10 @@
 #include "file.h"
 #include "fcntl.h"
 
+
+const int RETURN_ERR = (int)((void *)-1);
+
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -51,6 +55,22 @@ fdalloc(struct file *f)
         }
     }
     return -1;
+}
+
+void munmap()
+{
+    // implement the freeing logic of munmap here
+    cprintf("In vm.c in the munmap method\n");
+}
+
+void mmapPrivate()
+{
+    cprintf("In vm.c method mmapPrivate\n");
+}
+
+void mmapShared()
+{
+    cprintf("In vm.c method mmapShared\n");
 }
 
 // munmap returns 0 to indicate success, and -1 for failure.
@@ -103,7 +123,7 @@ int sys_mmap(void)
     int numPagesToAlloc = 0;
     for (int i = 0; i < length; numPagesToAlloc++, i += PAGE_SIZE) {}
 
-    if (!(flags & MAP_PRIVATE) || !(flags & MAP_SHARED))
+    if (!(flags & MAP_PRIVATE) && !(flags & MAP_SHARED))
     {
         // must have private or shared
         return RETURN_ERR;
@@ -113,15 +133,10 @@ int sys_mmap(void)
         if (((int)addr) >= VIRT_ADDR_END || ((int)addr) < VIRT_ADDR_START)
             return RETURN_ERR;
 
-    if(flags == MAP_PRIVATE)
+    if(flags & MAP_PRIVATE)
         mmapPrivate();
-    else if(flags == MAP_ANONYMOUS)
-        mmapAnonymous();
-    else{
-        cprintf("flag was not private or anonymous, failed\n");
-        return RETURN_ERR;
-    }
-    
+    else
+        mmapShared();    
 
     // in case of a good mmap return the address of the VAS we start at
     return 0;
@@ -130,7 +145,6 @@ int sys_mmap(void)
 int mmap(void *addr, int length, int prot, int flags, int fd, int offset) {
     return RETURN_ERR;
 }
-
 
 int sys_dup(void)
 {

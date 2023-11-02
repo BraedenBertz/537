@@ -1,3 +1,5 @@
+#ifndef MMAP_H
+#define MMAP_H
 /* Define mmap flags */
 #define MAP_PRIVATE 0x0001
 #define MAP_SHARED 0x0002
@@ -16,5 +18,16 @@
 
 /* Page size constant */
 #define PAGE_SIZE 4096
+#define PAGE_LIMIT 32
 
-const int RETURN_ERR = (int)((void*) -1);
+struct mmap_desc
+{
+    int numberOfPages;  // how many pages are associated with the mmap
+    int virtualAddress; // the start of the virtual address
+    int flags;          // flags associated with this mmap
+    int prot;           // protection bits
+    int dirty;          // if this has been written to
+    int shared;         // if its shared or naw
+    int valid;          // if this is a valid mmap_desc
+};
+#endif // MMAP_H

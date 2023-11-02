@@ -1,3 +1,4 @@
+#include "mmap.h"
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -10,16 +11,6 @@ struct cpu {
   struct proc *proc;           // The process running on this cpu or null
 };
 
-struct mmap_desc
-{
-  int numberOfPages;           //how many pages are associated with the mmap
-  int virtualAddress;          //the start of the virtual address
-  int flags;                   //flags associated with this mmap
-  int prot;                    //protection bits
-  int dirty;                   //if this has been written to
-  int shared;                  //if its shared or naw
-  int valid;                   //if this is a valid mmap_desc
-};
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
@@ -46,21 +37,22 @@ struct context {
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
-struct proc {
-  uint sz;                     // Size of process memory (bytes)
-  pde_t* pgdir;                // Page table
-  char *kstack;                // Bottom of kernel stack for this process
-  enum procstate state;        // Process state
-  int pid;                     // Process ID
-  struct proc *parent;         // Parent process
-  struct trapframe *tf;        // Trap frame for current syscall
-  struct context *context;     // swtch() here to run process
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  struct file *ofile[NOFILE];  // Open files
-  struct inode *cwd;           // Current directory
-  char name[16];               // Process name (debugging)
-  struct mmap_desc mmaps[30];
+struct proc
+{
+  uint sz;                    // Size of process memory (bytes)
+  pde_t *pgdir;               // Page table
+  char *kstack;               // Bottom of kernel stack for this process
+  enum procstate state;       // Process state
+  int pid;                    // Process ID
+  struct proc *parent;        // Parent process
+  struct trapframe *tf;       // Trap frame for current syscall
+  struct context *context;    // swtch() here to run process
+  void *chan;                 // If non-zero, sleeping on chan
+  int killed;                 // If non-zero, have been killed
+  struct file *ofile[NOFILE]; // Open files
+  struct inode *cwd;          // Current directory
+  char name[16];              // Process name (debugging)
+  struct mmap_desc mmaps[32];
 };
 
 // Process memory is laid out contiguously, low addresses first:
