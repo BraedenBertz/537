@@ -133,13 +133,22 @@ int sys_mmap(void)
         }
     }
 
-    if(flags & MAP_PRIVATE)
-        return mmapPrivate(addr, length, prot, flags, fd, offset);
-    else
-        return mmapShared(addr, length, prot, flags, fd, offset);
-
-    // in case of a good mmap return the address of the VAS we start at
-    return 0;
+    int i;
+    for(i = 0; i < PAGE_LIMIT; i++) {
+        struct mmap_desc md = myproc()->mmaps[i];
+        if(md.valid) continue;
+        md.valid = true;
+        md.dirty = false;
+        md.f = f;
+        md.flags = flags;
+        md.prot = prot;
+        md.guard_page = flags & MAP_GROWSUP ? true : false;
+        md.length = length;
+        f->ref++;
+        //md.virtualAddress = ?
+    }
+    if(i == PAGE_LIMIT) return RETURN_ERR;
+    else return myproc()->mmaps[i].virtualAddress;
 }
 
 int sys_dup(void)

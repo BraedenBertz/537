@@ -1,6 +1,8 @@
 #ifndef MMAP_H
 #define MMAP_H
 #define NULL 0
+#define true 1
+#define false 0
 /* Define mmap flags */
 #define MAP_PRIVATE 0x0001
 #define MAP_SHARED 0x0002
@@ -22,7 +24,7 @@
 
 struct mmap_desc
 {
-    int numberOfPages;  // how many pages are associated with the mmap
+    int length;         // the length in bits (bytes?)
     int virtualAddress; // the start of the virtual address
     int flags;          // flags associated with this mmap
     int prot;           // protection bits
@@ -31,5 +33,6 @@ struct mmap_desc
     int valid;          // if this is a valid mmap_desc
     int guard_page;     // 1 if it is a guard page, 0 otherwise
     struct file *f;     //the file its associated with
+    int already_alloced;//if the associated descriptor is already alloced
 };
 #endif // MMAP_H
