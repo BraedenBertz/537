@@ -63,14 +63,17 @@ void munmap()
     cprintf("In vm.c in the munmap method\n");
 }
 
-void mmapPrivate()
+int mmapPrivate(void *addr, int length, int prot, int flags, int fd, int offset)
 {
     cprintf("In vm.c method mmapPrivate\n");
+    return RETURN_ERR;
 }
 
-void mmapShared()
+int mmapShared(void *addr, int length, int prot, int flags, int fd, int offset)
 {
+    
     cprintf("In vm.c method mmapShared\n");
+    return RETURN_ERR;
 }
 
 // munmap returns 0 to indicate success, and -1 for failure.
@@ -99,51 +102,44 @@ int sys_munmap(void)
 //Validates the user's inputs and calls the implementation of mmap
 int sys_mmap(void)
 {
-    int addr;
-    int length;
-    int prot;
-    int flags;
-    int fd;
-    int offset = 0;
+    int addr, length, prot, fd, flags, offset = 0;
+    struct file *f;
     // handle the inputs
     if (argint(0, &addr) < 0 ||
         argint(1, &length) < 0 ||
         argint(2, &prot) < 0 ||
         argint(3, &flags) < 0 ||
-        argint(4, &fd) < 0 ||
+        argfd(4, &fd, &f) < 0 ||
         argint(5, &offset) < 0)
     {
         return RETURN_ERR;
     }
-    if (length < 0 || offset < 0)
-    {
-        return RETURN_ERR;
-    }
-    // This is the minimum number of pages we must include
-    int numPagesToAlloc = 0;
-    for (int i = 0; i < length; numPagesToAlloc++, i += PAGE_SIZE) {}
+    if (length < 0 || offset < 0)  return RETURN_ERR;
 
-    if (!(flags & MAP_PRIVATE) && !(flags & MAP_SHARED))
-    {
-        // must have private or shared
-        return RETURN_ERR;
-    }
+    if (!(flags & MAP_PRIVATE) && !(flags & MAP_SHARED)) return RETURN_ERR; 
 
-    if (flags & MAP_FIXED)
+    if (flags & MAP_FIXED) {
+        //see if the addr is even valid within the mmap bounds
         if (((int)addr) >= VIRT_ADDR_END || ((int)addr) < VIRT_ADDR_START)
             return RETURN_ERR;
+        //see if the address is already being mapped
+        for(int i = 0; i < PAGE_LIMIT; i++) {
+            struct mmap_desc md = myproc()->mmaps[i];
+            if(!md.valid) continue;
+            if(md.virtualAddress <= addr && addr < md.virtualAddress+PAGE_SIZE) {
+                //this is already mapped region, 
+                return RETURN_ERR;
+            }
+        }
+    }
 
     if(flags & MAP_PRIVATE)
-        mmapPrivate();
+        return mmapPrivate(addr, length, prot, flags, fd, offset);
     else
-        mmapShared();    
+        return mmapShared(addr, length, prot, flags, fd, offset);
 
     // in case of a good mmap return the address of the VAS we start at
     return 0;
-}
-
-int mmap(void *addr, int length, int prot, int flags, int fd, int offset) {
-    return RETURN_ERR;
 }
 
 int sys_dup(void)

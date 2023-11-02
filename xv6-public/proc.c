@@ -8,8 +8,6 @@
 #include "spinlock.h"
 #include "mmap.h"
 
-
-
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -91,6 +89,12 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->open_frames = 0;
+  for (int i = 0; i < PAGE_LIMIT; i++)
+  {
+    p->mmaps[i].valid = 0; // Mark the entry as invalid
+                               // Set other initial values for the mmap_desc entries as needed
+  }
 
   release(&ptable.lock);
 

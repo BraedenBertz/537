@@ -1,10 +1,10 @@
 #ifndef MMAP_H
 #define MMAP_H
+#define NULL 0
 /* Define mmap flags */
 #define MAP_PRIVATE 0x0001
 #define MAP_SHARED 0x0002
 #define MAP_ANONYMOUS 0x0004
-#define MAP_ANON MAP_ANONYMOUS
 #define MAP_FIXED 0x0008
 #define MAP_GROWSUP 0x0010
 
@@ -29,5 +29,7 @@ struct mmap_desc
     int dirty;          // if this has been written to
     int shared;         // if its shared or naw
     int valid;          // if this is a valid mmap_desc
+    int guard_page;     // 1 if it is a guard page, 0 otherwise
+    struct file *f;     //the file its associated with
 };
 #endif // MMAP_H
