@@ -89,8 +89,8 @@ int sys_munmap(void)
         return RETURN_ERR;
     }
     // if addr is not a multiple of PAGE_SIZE return -1;
-    if (((int)addr) % PAGE_SIZE != 0){
-        cprintf("error, addr mod PAGE_SIZE is not 0: addr: %d, PAGE_SIZE: %d\n", (int)addr, PAGE_SIZE);
+    if (((uint)addr) % PGSIZE != 0){
+        cprintf("error, addr mod PAGE_SIZE is not 0: addr: %d, PAGE_SIZE: %d\n", (uint)addr, PGSIZE);
         return RETURN_ERR;
     }
 

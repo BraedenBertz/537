@@ -172,7 +172,8 @@ void            uartintr(void);
 void            uartputc(int);
 
 // vm.c
-void            seginit(void);
+int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
+void seginit(void);
 void            kvmalloc(void);
 pde_t*          setupkvm(void);
 char*           uva2ka(pde_t*, char*);
@@ -187,8 +188,6 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 void            munmap();
-void            mmapPrivate();
-void            mmapAnonymous();
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
