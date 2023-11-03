@@ -195,6 +195,33 @@ fork(void)
   if((np = allocproc()) == 0){
     return -1;
   }
+  
+  //for each mmap in parent
+  for(int i =0; i < PAGE_LIMIT; i++) {
+    struct mmap_desc* md_child = &np->mmaps[i];
+    struct mmap_desc* md_parent = &curproc->mmaps[i];
+    // if its shared, in the child, add that address to the child's mmap[i]
+    if(md_parent->shared) {
+      md_child = md_parent;
+    } else {
+      // otherewise, just alloc a new one and copy the data over
+      char *mem = kalloc();
+      if (mem == NULL)
+        panic("kalloc");
+      memset(mem, 0, PGSIZE);
+      long address_start = PGROUNDDOWN(md_parent->virtualAddress);
+      if (mappages(myproc()->pgdir, (void *)address_start, PGSIZE, (uint)mem, md_parent->prot | PTE_U) != 0)
+      {
+        kfree(mem);
+        myproc()->killed = 1;
+      } else {
+        //copy all of the data from this pointer to that pointer
+        deep_copy(md_child, md_parent);
+      }
+    }
+  }
+  
+  
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
