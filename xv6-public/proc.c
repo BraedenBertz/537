@@ -181,6 +181,26 @@ growproc(int n)
   return 0;
 }
 
+
+
+void deep_copy(struct mmap_desc *old, struct mmap_desc *new){
+  // copies old to new as deep copy
+
+  new->length = old->length;
+  new->virtualAddress = old->virtualAddress;
+  new->flags = old->flags;
+  new->prot = old->prot;
+  new->dirty = old->dirty;
+  new->shared = old->shared;
+  new->valid = old->valid;
+  new->guard_page = old->guard_page;
+  new->f = old->f;
+  new->already_alloced = old->already_alloced;
+    
+
+}
+
+
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
@@ -195,7 +215,7 @@ fork(void)
   if((np = allocproc()) == 0){
     return -1;
   }
-  
+
   //for each mmap in parent
   for(int i =0; i < PAGE_LIMIT; i++) {
     struct mmap_desc* md_child = &np->mmaps[i];
@@ -220,9 +240,9 @@ fork(void)
       }
     }
   }
-  
-  
 
+
+  
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
     kfree(np->kstack);

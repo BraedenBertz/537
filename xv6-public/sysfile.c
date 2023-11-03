@@ -56,22 +56,61 @@ fdalloc(struct file *f)
     }
     return -1;
 }
+// make a function that makes a deep copy of mmap_desc
+
+
+
+
+
+
+void munmap_free(struct mmap_desc md[], int addr, int length){
+    cprintf("In sysfile.c gonna run logic for munmap and free the mmap_desc struct\n");
+    int length_check = 0;
+    for(int i = 0; i < PAGE_LIMIT; i++)
+    {
+        if(md->virtualAddress == addr)
+        {
+            if(length_check >= length)
+                break;
+            length_check++;
+            md->length = 0;
+            md->virtualAddress = 0;
+            md->flags = 0;
+            md->prot = 0;
+            md->dirty = 0;
+            md->shared = 0;
+            md->valid = 0;
+            md->guard_page = 0;
+            fileclose(md->f);
+            md->already_alloced = 0;
+
+        }   
+    }
+}
 
 void munmap()
 {
+    // one function that allow me to pput in a mmap_desc descriptor
+    // this function should clear all of the data in there, releasing file and freeing memory/setting to 0
+
+    // may need another function to see if the page is dirty: ie it has been written
+    // to and then will need to write to that file. Possibly won't need thisk, but keep in mind if needed. 
     // implement the freeing logic of munmap here
     cprintf("In vm.c in the munmap method\n");
 }
 
 int mmapPrivate(void *addr, int length, int prot, int flags, int fd, int offset)
 {
+    // private still needs to copy the mapping from the parent to the child (in fork) however, we 
+    // do not need to ensure if the child/parent makes a change that the other needs to see it.
     cprintf("In vm.c method mmapPrivate\n");
     return RETURN_ERR;
 }
 
 int mmapShared(void *addr, int length, int prot, int flags, int fd, int offset)
 {
-    
+    // the mapping is being shared by the parent and child so updates by either the 
+    // parent or the child should be visible to the other
     cprintf("In vm.c method mmapShared\n");
     return RETURN_ERR;
 }
@@ -94,7 +133,9 @@ int sys_munmap(void)
         return RETURN_ERR;
     }
 
-    munmap();
+
+    munmap_free(myproc()->mmaps, addr, length);
+
     return 0;
 }
 
@@ -132,6 +173,8 @@ int sys_mmap(void)
             }
         }
     }
+
+    // if flag is MAP_ANONYMOUS can ignore offset and fd
 
     int i;
     for(i = 0; i < PAGE_LIMIT; i++) {
