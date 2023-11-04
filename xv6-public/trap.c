@@ -8,11 +8,13 @@
 #include "traps.h"
 #include "spinlock.h"
 
+
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
 extern uint vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+
 
 void tvinit(void)
 {
@@ -127,6 +129,7 @@ void trap(struct trapframe *tf)
         else
         {
             //not a guard page, but is valid, go ahead and alloc this page
+
             char *mem = kalloc();
             if (mem == NULL)
                 panic("kalloc");
@@ -136,6 +139,10 @@ void trap(struct trapframe *tf)
             {
                 kfree(mem);
                 myproc()->killed = 1;
+            }
+            if(md->flags & MAP_ANON) {}
+            else {
+                fileread(md->f, (char*)fault_addr_head, PGSIZE);
             }
         }
         

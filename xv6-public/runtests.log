@@ -30,34 +30,284 @@ objdump -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > kernel.sym
 dd if=/dev/zero of=xv6.img count=10000
 10000+0 records in
 10000+0 records out
-5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0342645 s, 149 MB/s
+5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0363968 s, 141 MB/s
 dd if=bootblock of=xv6.img conv=notrunc
 1+0 records in
 1+0 records out
-512 bytes copied, 0.000311463 s, 1.6 MB/s
+512 bytes copied, 0.000375701 s, 1.4 MB/s
 dd if=kernel of=xv6.img seek=1 conv=notrunc
 421+1 records in
 421+1 records out
-215684 bytes (216 kB, 211 KiB) copied, 0.00142836 s, 151 MB/s
+215852 bytes (216 kB, 211 KiB) copied, 0.00158185 s, 136 MB/s
 make: 'fs.img' is up to date.
 
 
 test build PASSED
  (build xv6 using make)
 
-starting test_8
+starting test_1
 
 **********************************************************************
 
-Test test_8
-MAP_GROWSUP that adds a single page to anonymous mapping
+Test test_1
+Simple mmap with MAP_ANON | MAP_FIXED
 
 **********************************************************************
-Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_8.c
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_1.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpk6jskkxy/p/Makefile
-/tmp/tmpk6jskkxy/p/Makefile.test
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 733 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610743808, false
+Return value: 1610743808
+MMAP	 SUCCESS
+
+
+test test_1 PASSED (1 of 1)
+ (Simple mmap with MAP_ANON | MAP_FIXED)
+
+starting test_2
+
+**********************************************************************
+
+Test test_2
+Simple mmap/munmap with MAP_ANON | MAP_FIXED
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_2.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 733 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610743808, false
+Return value: 1610743808
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+MMAP	 SUCCESS
+
+
+test test_2 PASSED (1 of 1)
+ (Simple mmap/munmap with MAP_ANON | MAP_FIXED)
+
+starting test_3
+
+**********************************************************************
+
+Test test_3
+Access the mmap memory allocated with MAP_ANON | MAP_FIXED, then munmap
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_3.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 733 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610743808, false
+Return value: 1610743808
+0|1610743808
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+MMAP	 SUCCESS
+
+test test_3 PASSED (1 of 1)
+ (Access the mmap memory allocated with MAP_ANON | MAP_FIXED, then munmap)
+
+starting test_4
+
+**********************************************************************
+
+Test test_4
+Try mmap MAP_ANON without MAP_FIXED
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_4.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 733 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+0|1610612736
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+MMAP	 SUCCESS
+
+
+test test_4 PASSED (1 of 1)
+ (Try mmap MAP_ANON without MAP_FIXED)
+
+starting test_5
+
+**********************************************************************
+
+Test test_5
+Try to allocate memory with MAP_FIXED at an illegal address
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_5.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 733 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+MMAP	 SUCCESS
+
+
+test test_5 PASSED (1 of 1)
+ (Try to allocate memory with MAP_FIXED at an illegal address)
+
+starting test_6
+
+**********************************************************************
+
+Test test_6
+mmap a file
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_6.c
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+Trying to build project using make
+make xv6.img fs.img
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -84,10 +334,115 @@ init: starting sh
 $ tester
 tester
 In sys_map
-AA
-A
-B
-C
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+0|1610612736
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+MMAP	 SUCCESS
+
+
+test test_6 PASSED (1 of 1)
+ (mmap a file)
+
+starting test_7
+
+**********************************************************************
+
+Test test_7
+Changes to the mmapped memory should be reflected in file after munmap
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_7.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 738 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+0|1610612736
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+Writes to mmaped memory not reflected in file
+	Expected: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+	Got: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+MMAP	 FAILED
+
+test test_7 FAILED (0 of 1)
+ (Changes to the mmapped memory should be reflected in file after munmap)
+ tester failed
+
+starting test_8
+
+**********************************************************************
+
+Test test_8
+MAP_GROWSUP that adds a single page to anonymous mapping
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_8.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 736 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
 Number of pages to allocate: 2
 The virt addr being assigned is: 1610612736, false
 The virt addr being assigned is: 1610616832, true
@@ -100,19 +455,432 @@ In sysfile.c gonna run logic for munmap and free the mmap_desc struct
 Before the file close
 After the file close
 MMAP	 SUCCESS
-$ 
 
 test test_8 PASSED (1 of 1)
  (MAP_GROWSUP that adds a single page to anonymous mapping)
+
+starting test_9
+
+**********************************************************************
+
+Test test_9
+MAP_GROWSUP with file-backed mapping
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_9.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 738 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 2
+The virt addr being assigned is: 1610612736, false
+The virt addr being assigned is: 1610616832, true
+Return value: 1610612736
+0|1610612736
+1|1610616832
+We hit a guard page at index 1
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+Read from file FAILED
+
+
+test test_9 FAILED (0 of 1)
+ (MAP_GROWSUP with file-backed mapping)
+ tester failed
+
+starting test_10
+
+**********************************************************************
+
+Test test_10
+Try growing memory without MAP_GROWSUP - should segfault
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_10.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 735 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+0|1610612736
+Segmentation Fault 1
+
+
+test test_10 PASSED (1 of 1)
+ (Try growing memory without MAP_GROWSUP - should segfault)
+
+starting test_11
+
+**********************************************************************
+
+Test test_11
+Two MAP_GROWSUP mappings with a single guard page in between - the lower should not extend
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_11.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 735 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 2
+The virt addr being assigned is: 1610612736, false
+The virt addr being assigned is: 1610616832, true
+Return value: 1610612736
+In sys_map
+Number of pages to allocate: 2
+The virt addr being assigned is: 1610620928, false
+The virt addr being assigned is: 1610625024, true
+Return value: 1610620928
+0|1610612736
+1|1610616832
+We hit a guard page at index 1
+Segmentation Fault
+
+
+test test_11 PASSED (1 of 1)
+ (Two MAP_GROWSUP mappings with a single guard page in between - the lower should not extend)
+
+starting test_12
+
+**********************************************************************
+
+Test test_12
+Child access to parent mmap
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_12.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 737 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+1610612736
+Segmentation Fault 1
+
+
+test test_12 FAILED (0 of 1)
+ (Child access to parent mmap)
+ seg fault
+
+starting test_13
+
+**********************************************************************
+
+Test test_13
+Changes made to mmapped memory should not be reflected in file when MAP_PRIVATE is set
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_13.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 738 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+0|1610612736
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+MMAP	 SUCCESS
+$ 
+
+test test_13 PASSED (1 of 1)
+ (Changes made to mmapped memory should not be reflected in file when MAP_PRIVATE is set)
+
+starting test_14
+
+**********************************************************************
+
+Test test_14
+Child should access file data with MAP_PRIVATE flag
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_14.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 737 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+1610612736
+Segmentation Fault 1
+
+
+test test_14 FAILED (0 of 1)
+ (Child should access file data with MAP_PRIVATE flag)
+ seg fault
+
+starting test_15
+
+**********************************************************************
+
+Test test_15
+Parent should not see child mofications to memory with MAP_PRIVATE
+
+**********************************************************************
+Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_15.c
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpllhpu3dv/p/Makefile
+/tmp/tmpllhpu3dv/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _mmap _munmap 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 738 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+In sys_map
+Number of pages to allocate: 1
+The virt addr being assigned is: 1610612736, false
+Return value: 1610612736
+0|1610612736
+1610612736
+Segmentation Fault 1
+
+
+test test_15 FAILED (0 of 1)
+ (Parent should not see child mofications to memory with MAP_PRIVATE)
+ seg fault
 
 **********************************************************************
 Summary:
 test build PASSED
  (build xv6 using make)
 
+test test_1 PASSED (1 of 1)
+ (Simple mmap with MAP_ANON | MAP_FIXED)
+
+test test_2 PASSED (1 of 1)
+ (Simple mmap/munmap with MAP_ANON | MAP_FIXED)
+
+test test_3 PASSED (1 of 1)
+ (Access the mmap memory allocated with MAP_ANON | MAP_FIXED, then munmap)
+
+test test_4 PASSED (1 of 1)
+ (Try mmap MAP_ANON without MAP_FIXED)
+
+test test_5 PASSED (1 of 1)
+ (Try to allocate memory with MAP_FIXED at an illegal address)
+
+test test_6 PASSED (1 of 1)
+ (mmap a file)
+
+test test_7 FAILED (0 of 1)
+ (Changes to the mmapped memory should be reflected in file after munmap)
+ tester failed
+
 test test_8 PASSED (1 of 1)
  (MAP_GROWSUP that adds a single page to anonymous mapping)
 
-Passed 2 of 2 tests.
-Overall 2 of 2
-Points 1 of 1
+test test_9 FAILED (0 of 1)
+ (MAP_GROWSUP with file-backed mapping)
+ tester failed
+
+test test_10 PASSED (1 of 1)
+ (Try growing memory without MAP_GROWSUP - should segfault)
+
+test test_11 PASSED (1 of 1)
+ (Two MAP_GROWSUP mappings with a single guard page in between - the lower should not extend)
+
+test test_12 FAILED (0 of 1)
+ (Child access to parent mmap)
+ seg fault
+
+test test_13 PASSED (1 of 1)
+ (Changes made to mmapped memory should not be reflected in file when MAP_PRIVATE is set)
+
+test test_14 FAILED (0 of 1)
+ (Child should access file data with MAP_PRIVATE flag)
+ seg fault
+
+test test_15 FAILED (0 of 1)
+ (Parent should not see child mofications to memory with MAP_PRIVATE)
+ seg fault
+
+Passed 11 of 16 tests.
+Overall 11 of 16
+Points 10 of 15

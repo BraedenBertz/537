@@ -217,26 +217,29 @@ fork(void)
   for(int i =0; i < PAGE_LIMIT; i++) {
     struct mmap_desc* md_child = &np->mmaps[i];
     struct mmap_desc* md_parent = &curproc->mmaps[i];
-    if(!md_parent->valid) {continue;}
+    long address_start = md_parent->virtualAddress;
+     if (!md_parent->valid) { continue; }
     // if its shared, in the child, add that address to the child's mmap[i]
     if(md_parent->shared) {
+      cprintf("shared mmaping, must... add... to... child\n");
       md_child = md_parent;
+      cprintf("parent: %p, child :%p\n", md_child, md_parent);
     } else {
       // otherewise, just alloc a new one and copy the data over
       md_child = (struct mmap_desc*) kalloc();
       if (md_child == NULL)
         panic("kalloc");
       memset(md_child, 0, PGSIZE);
-      long address_start = PGROUNDDOWN(md_parent->virtualAddress);
-      cprintf("%d\n", address_start);
-      if (mappages(np->pgdir, (void *)address_start, PGSIZE, (uint)md_child, md_parent->prot | PTE_U) != 0)
-      {
-        kfree((char*) md_child);
-        myproc()->killed = 1;
-      } else {
-        //copy all of the data from this pointer to that pointer
-        deep_copy(md_child, md_parent);
-      }
+      address_start = PGROUNDDOWN(md_parent->virtualAddress);
+    }
+    cprintf("%d\n", address_start);
+    if (mappages(np->pgdir, (void *)address_start, PGSIZE, V2P(md_child), md_parent->prot | PTE_U) != 0)
+    {
+      kfree((char*) md_child);
+      myproc()->killed = 1;
+    } else {
+      //copy all of the data from this pointer to that pointer
+      deep_copy(md_child, md_parent);
     }
   }
 

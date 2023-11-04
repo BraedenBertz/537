@@ -140,14 +140,7 @@ int sys_mmap(void)
         return RETURN_ERR;
     }
     
-    cprintf("AA\n");
-    if(!(flags & MAP_ANON)) {
-        argfd(4, &fd, &f);
-    }
-    
-    cprintf("A\n");
     if (length < 0 || offset < 0)  return RETURN_ERR;
-    cprintf("B\n");
 
     int j = 0;
     int numberOfPagesToAllocate = 0;
@@ -158,10 +151,8 @@ int sys_mmap(void)
         numberOfPagesToAllocate++;
 
     if (!(flags & MAP_PRIVATE) && !(flags & MAP_SHARED)) return RETURN_ERR; 
-    cprintf("C\n");
 
     if (flags & MAP_FIXED) {
-        cprintf("I am here in the if for flags and map_fixed\n");
         //see if the addr is even valid within the mmap bounds
         if (((int)addr + length) >= VIRT_ADDR_END || ((int)addr) < VIRT_ADDR_START)
             return RETURN_ERR;
@@ -183,7 +174,6 @@ int sys_mmap(void)
             }
         }
         va_start = addr;
-        cprintf("on line 206, va start is: %d\n, va_start\n", va_start);
     }
 
     cprintf("Number of pages to allocate: %d\n", numberOfPagesToAllocate);
@@ -205,7 +195,6 @@ int sys_mmap(void)
         }
     }
     if(i == -1) {
-        cprintf("testing isaac fail\n");
         return RETURN_ERR;
     }
     
@@ -218,7 +207,10 @@ int sys_mmap(void)
         md->prot = prot;
         if(j == i+run-1 && flags & MAP_GROWSUP) md->guard_page = true;
         else md->guard_page = false;
-
+        if(!(flags & MAP_ANON)) {
+            if(argfd(4, &fd, &f) < 0) return RETURN_ERR;
+            md->f = f;
+        }
         md->length = length;
         //f->ref++;
         cprintf("The virt addr being assigned is: %d, %s\n", va_start, md->guard_page ? "true" : "false");
