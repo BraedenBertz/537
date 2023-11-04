@@ -114,7 +114,7 @@ void trap(struct trapframe *tf)
                     panic("kalloc");
                 memset(mem, 0, PGSIZE);
                 long fault_addr_head = PGROUNDDOWN(fault_addr);
-                if (mappages(myproc()->pgdir, (void*)fault_addr_head, PGSIZE, (uint)mem, md->prot | PTE_U) != 0)
+                if (mappages(myproc()->pgdir, (void *)fault_addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
                 {
                     kfree(mem);
                     myproc()->killed = 1;
@@ -132,7 +132,7 @@ void trap(struct trapframe *tf)
                 panic("kalloc");
             memset(mem, 0, PGSIZE);
             long fault_addr_head = PGROUNDDOWN(fault_addr);
-            if (mappages(myproc()->pgdir, (void*)fault_addr_head, PGSIZE, (uint)mem, md->prot | PTE_U) != 0)
+            if (mappages(myproc()->pgdir, (void*)fault_addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
             {
                 kfree(mem);
                 myproc()->killed = 1;

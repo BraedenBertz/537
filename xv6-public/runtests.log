@@ -30,15 +30,15 @@ objdump -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > kernel.sym
 dd if=/dev/zero of=xv6.img count=10000
 10000+0 records in
 10000+0 records out
-5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0367062 s, 139 MB/s
+5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0342645 s, 149 MB/s
 dd if=bootblock of=xv6.img conv=notrunc
 1+0 records in
 1+0 records out
-512 bytes copied, 0.000378539 s, 1.4 MB/s
+512 bytes copied, 0.000311463 s, 1.6 MB/s
 dd if=kernel of=xv6.img seek=1 conv=notrunc
 421+1 records in
 421+1 records out
-215676 bytes (216 kB, 211 KiB) copied, 0.00231724 s, 93.1 MB/s
+215684 bytes (216 kB, 211 KiB) copied, 0.00142836 s, 151 MB/s
 make: 'fs.img' is up to date.
 
 
@@ -56,8 +56,8 @@ MAP_GROWSUP that adds a single page to anonymous mapping
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_8.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpebgo7jui/p/Makefile
-/tmp/tmpebgo7jui/p/Makefile.test
+/tmp/tmpk6jskkxy/p/Makefile
+/tmp/tmpk6jskkxy/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -77,8 +77,7 @@ iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
 Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
 
 
-Booting from Hard Disk...
-xv6...
+Booting from Hard Disk..xv6...
 cpu0: starting 0
 sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
 init: starting sh
@@ -96,15 +95,24 @@ Return value: 1610612736
 0|1610612736
 1|1610616832
 We hit a guard page at index 1
-Couldn't read the same data back!
-Expected: 
-Got: 
-MMAP	 FAILED
+In the sys_munmap function in sysfile.c
+In sysfile.c gonna run logic for munmap and free the mmap_desc struct
+Before the file close
+After the file close
+MMAP	 SUCCESS
+$ 
 
-
-test test_8 FAILED (0 of 1)
+test test_8 PASSED (1 of 1)
  (MAP_GROWSUP that adds a single page to anonymous mapping)
- tester failed
 
-Skipped 0 tests.
-To keep testing after failing a test, use flag '-c' or '--continue'
+**********************************************************************
+Summary:
+test build PASSED
+ (build xv6 using make)
+
+test test_8 PASSED (1 of 1)
+ (MAP_GROWSUP that adds a single page to anonymous mapping)
+
+Passed 2 of 2 tests.
+Overall 2 of 2
+Points 1 of 1
