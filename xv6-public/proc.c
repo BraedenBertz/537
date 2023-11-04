@@ -185,7 +185,6 @@ growproc(int n)
 
 void deep_copy(struct mmap_desc *old, struct mmap_desc *new){
   // copies old to new as deep copy
-
   new->length = old->length;
   new->virtualAddress = old->virtualAddress;
   new->flags = old->flags;
@@ -196,8 +195,6 @@ void deep_copy(struct mmap_desc *old, struct mmap_desc *new){
   new->guard_page = old->guard_page;
   new->f = old->f;
   new->already_alloced = old->already_alloced;
-    
-
 }
 
 
@@ -220,19 +217,21 @@ fork(void)
   for(int i =0; i < PAGE_LIMIT; i++) {
     struct mmap_desc* md_child = &np->mmaps[i];
     struct mmap_desc* md_parent = &curproc->mmaps[i];
+    if(!md_parent->valid) {continue;}
     // if its shared, in the child, add that address to the child's mmap[i]
     if(md_parent->shared) {
       md_child = md_parent;
     } else {
       // otherewise, just alloc a new one and copy the data over
-      char *mem = kalloc();
-      if (mem == NULL)
+      md_child = (struct mmap_desc*) kalloc();
+      if (md_child == NULL)
         panic("kalloc");
-      memset(mem, 0, PGSIZE);
+      memset(md_child, 0, PGSIZE);
       long address_start = PGROUNDDOWN(md_parent->virtualAddress);
-      if (mappages(myproc()->pgdir, (void *)address_start, PGSIZE, (uint)mem, md_parent->prot | PTE_U) != 0)
+      cprintf("%d\n", address_start);
+      if (mappages(np->pgdir, (void *)address_start, PGSIZE, (uint)md_child, md_parent->prot | PTE_U) != 0)
       {
-        kfree(mem);
+        kfree((char*) md_child);
         myproc()->killed = 1;
       } else {
         //copy all of the data from this pointer to that pointer
