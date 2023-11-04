@@ -9,6 +9,8 @@
 #define MAP_ANONYMOUS 0x0004
 #define MAP_FIXED 0x0008
 #define MAP_GROWSUP 0x0010
+#define MAP_ANON MAP_ANONYMOUS
+
 
 /* Protections on memory mapping */
 #define PROT_READ 0x1
@@ -21,6 +23,8 @@
 /* Page size constant */
 #define PAGE_SIZE 4096
 #define PAGE_LIMIT 32
+
+extern int VA_PTR;
 
 struct mmap_desc
 {

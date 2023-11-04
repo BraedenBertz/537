@@ -17,6 +17,7 @@
 
 
 const int RETURN_ERR = (int)((void *)-1);
+int VA_PTR = VIRT_ADDR_START;
 
 
 // Fetch the nth word-sized system call argument as a file descriptor
@@ -143,55 +144,120 @@ int sys_munmap(void)
 //Validates the user's inputs and calls the implementation of mmap
 int sys_mmap(void)
 {
+    cprintf("In sys_map\n");
+    int va_start = VA_PTR;
     int addr, length, prot, fd, flags, offset = 0;
     struct file *f;
     // handle the inputs
-    if (argint(0, &addr) < 0 ||
-        argint(1, &length) < 0 ||
+    if (argint(0, &addr) < 0  ||
+        argint(1, &length) < 0  ||
         argint(2, &prot) < 0 ||
         argint(3, &flags) < 0 ||
-        argfd(4, &fd, &f) < 0 ||
+        argint(4, &fd) < 0 ||
         argint(5, &offset) < 0)
     {
         return RETURN_ERR;
     }
+    cprintf("AA\n");
+    if(!(flags & MAP_ANON)) {
+        argfd(4, &fd, &f);
+    }
+    
+    cprintf("A\n");
     if (length < 0 || offset < 0)  return RETURN_ERR;
+    cprintf("B\n");
+
+    int j = 0;
+    int numberOfPagesToAllocate = 0;
+    for(j = 0; j < length; j+=PGSIZE){
+        numberOfPagesToAllocate++;
+    }
+    if(flags & MAP_GROWSUP) 
+        numberOfPagesToAllocate++;
 
     if (!(flags & MAP_PRIVATE) && !(flags & MAP_SHARED)) return RETURN_ERR; 
+    cprintf("C\n");
 
     if (flags & MAP_FIXED) {
+       
+       
+       
+        cprintf("I am here in the if for flags and map_fixed\n");
         //see if the addr is even valid within the mmap bounds
-        if (((int)addr) >= VIRT_ADDR_END || ((int)addr) < VIRT_ADDR_START)
+        if (((int)addr + length) >= VIRT_ADDR_END || ((int)addr) < VIRT_ADDR_START)
             return RETURN_ERR;
-        //see if the address is already being mapped
-        for(int i = 0; i < PAGE_LIMIT; i++) {
-            struct mmap_desc md = myproc()->mmaps[i];
-            if(!md.valid) continue;
-            if(md.virtualAddress <= addr && addr < md.virtualAddress+PAGE_SIZE) {
-                //this is already mapped region, 
-                return RETURN_ERR;
+
+        for(j = 0; j < numberOfPagesToAllocate; j++){
+
+            int currAddr = addr+PAGE_SIZE*j;
+
+            //see if the address is already being mapped
+            for(int i = 0; i < PAGE_LIMIT; i++) {
+                struct mmap_desc md = myproc()->mmaps[i];
+                if(!md.valid) continue;
+                if(md.virtualAddress <= currAddr && 
+                    currAddr < md.virtualAddress+PAGE_SIZE) {
+                    //this is already mapped region,
+                    cprintf("Return statement from fixed region intercepts other mapping: %d\n", RETURN_ERR); 
+                    return RETURN_ERR;
+                }
             }
         }
+        va_start = addr;
+        cprintf("on line 206, va start is: %d\n, va_start\n", va_start);
     }
+
+    cprintf("Number of pages to allocate: %d\n", numberOfPagesToAllocate);
 
     // if flag is MAP_ANONYMOUS can ignore offset and fd
+    int run = 0;
+    int i = -1;
+    
+    for(j = 0; j< PAGE_LIMIT; j++){
+        struct mmap_desc md = myproc()->mmaps[j];
+        cprintf("the md valid value is: %d\n", md.valid);
+        if(md.valid) {
+            run = 0;
+            continue;
+        }
+        
+        run++;
 
-    int i;
-    for(i = 0; i < PAGE_LIMIT; i++) {
-        struct mmap_desc md = myproc()->mmaps[i];
-        if(md.valid) continue;
-        md.valid = true;
-        md.dirty = false;
-        md.f = f;
-        md.flags = flags;
-        md.prot = prot;
-        md.guard_page = flags & MAP_GROWSUP ? true : false;
-        md.length = length;
-        f->ref++;
-        //md.virtualAddress = ?
+        cprintf("Run is; %d\n", run);
+        if(run == numberOfPagesToAllocate){
+             i = j - numberOfPagesToAllocate + 1;
+             break;
+        }
     }
-    if(i == PAGE_LIMIT) return RETURN_ERR;
-    else return myproc()->mmaps[i].virtualAddress;
+    if(i == -1) {
+        cprintf("testing isaac fail\n");
+        return RETURN_ERR;
+    }
+    
+    for(j = i; j < i + run; j++) {
+        struct mmap_desc *md = &myproc()->mmaps[j];
+        if(md->valid) continue;
+        md->valid = true;
+        md->dirty = false;
+        //md->f = f;
+        md->flags = flags;
+        md->prot = prot;
+        md->guard_page = flags & MAP_GROWSUP ? true : false;
+        md->length = length;
+        //f->ref++;
+        cprintf("The virt addr being assigned is: %d\n", va_start);
+        md->virtualAddress = va_start;
+        va_start+=PGSIZE;
+    }
+    // if the mmap request is fixed, then we don't change the va_ptr
+    if(!(flags & MAP_FIXED)){
+        VA_PTR = va_start;
+    }
+    cprintf("The virtual address is given to mmap: %d\n", myproc()->mmaps[i].virtualAddress);
+    
+    
+    return myproc()->mmaps[i].virtualAddress;
+    
 }
 
 int sys_dup(void)

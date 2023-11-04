@@ -76,6 +76,7 @@ void trap(struct trapframe *tf)
         int i;
         struct mmap_desc* md;
          long fault_addr = rcr2();
+         cprintf("The address is: %d\n", fault_addr);
         for (i = 0; i < PAGE_LIMIT; i++)
         {
             md = &myproc()->mmaps[i];
