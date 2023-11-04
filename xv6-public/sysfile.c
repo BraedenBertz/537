@@ -82,7 +82,9 @@ void munmap_free(struct mmap_desc md[], int addr, int length){
             md->shared = 0;
             md->valid = 0;
             md->guard_page = 0;
-            fileclose(md->f);
+            cprintf("Before the file close\n");
+                //fileclose(md->f);
+            cprintf("After the file close\n");
             md->already_alloced = 0;
 
         }   
@@ -158,6 +160,7 @@ int sys_mmap(void)
     {
         return RETURN_ERR;
     }
+    
     cprintf("AA\n");
     if(!(flags & MAP_ANON)) {
         argfd(4, &fd, &f);

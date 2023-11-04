@@ -36,6 +36,7 @@ struct mmap_desc
     int shared;         // if its shared or naw
     int valid;          // if this is a valid mmap_desc
     int guard_page;     // 1 if it is a guard page, 0 otherwise
+    int hasFile;
     struct file *f;     //the file its associated with
     int already_alloced;//if the associated descriptor is already alloced
 };
