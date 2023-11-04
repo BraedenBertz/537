@@ -75,28 +75,32 @@ void trap(struct trapframe *tf)
         // see if this is a page fault becuase of a grows up mmap
         int i;
         struct mmap_desc* md;
-         long fault_addr = rcr2();
-         cprintf("The address is: %d\n", fault_addr);
+        long fault_addr = rcr2();
         for (i = 0; i < PAGE_LIMIT; i++)
         {
             md = &myproc()->mmaps[i];
             if (!md->valid)
                 continue;
-            if (md->virtualAddress <= fault_addr && md->virtualAddress + PAGE_SIZE >= fault_addr)
+            else if (md->virtualAddress <= fault_addr 
+            && md->virtualAddress + PAGE_SIZE > fault_addr)
             {
+                cprintf("%d|%d\n", i, md->virtualAddress);
                 //this is our mmap_descriptor for this address
                 break;
             }
         }
         if(i == PAGE_LIMIT) {
             //wasn't in our mapping
-            cprintf("Segmentation Fault\n");
+            cprintf("Segmentation Fault 1\n");
             kill(myproc()->pid);
+            break;
         }
         // its a guard page
         if (md->guard_page)
         {
+            cprintf("We hit a guard page at index %d\n", i);
             //see if we can grow up by one page
+
             if(myproc()->mmaps[i+1].valid)
             {
                 //sadly we cannot
@@ -134,6 +138,8 @@ void trap(struct trapframe *tf)
                 myproc()->killed = 1;
             }
         }
+        
+        //cprintf("breeaking from trapc\n");
         break;
     case T_IRQ0 + 7:
     case T_IRQ0 + IRQ_SPURIOUS:

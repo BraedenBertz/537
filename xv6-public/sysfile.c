@@ -59,12 +59,7 @@ fdalloc(struct file *f)
 }
 // make a function that makes a deep copy of mmap_desc
 
-
-
-
-
-
-void munmap_free(struct mmap_desc md[], int addr, int length){
+void munmap_free(struct mmap_desc* md, int addr, int length){
     cprintf("In sysfile.c gonna run logic for munmap and free the mmap_desc struct\n");
     int length_check = 0;
     for(int i = 0; i < PAGE_LIMIT; i++)
@@ -100,22 +95,6 @@ void munmap()
     // to and then will need to write to that file. Possibly won't need thisk, but keep in mind if needed. 
     // implement the freeing logic of munmap here
     cprintf("In vm.c in the munmap method\n");
-}
-
-int mmapPrivate(void *addr, int length, int prot, int flags, int fd, int offset)
-{
-    // private still needs to copy the mapping from the parent to the child (in fork) however, we 
-    // do not need to ensure if the child/parent makes a change that the other needs to see it.
-    cprintf("In vm.c method mmapPrivate\n");
-    return RETURN_ERR;
-}
-
-int mmapShared(void *addr, int length, int prot, int flags, int fd, int offset)
-{
-    // the mapping is being shared by the parent and child so updates by either the 
-    // parent or the child should be visible to the other
-    cprintf("In vm.c method mmapShared\n");
-    return RETURN_ERR;
 }
 
 // munmap returns 0 to indicate success, and -1 for failure.
@@ -182,9 +161,6 @@ int sys_mmap(void)
     cprintf("C\n");
 
     if (flags & MAP_FIXED) {
-       
-       
-       
         cprintf("I am here in the if for flags and map_fixed\n");
         //see if the addr is even valid within the mmap bounds
         if (((int)addr + length) >= VIRT_ADDR_END || ((int)addr) < VIRT_ADDR_START)
@@ -218,15 +194,11 @@ int sys_mmap(void)
     
     for(j = 0; j< PAGE_LIMIT; j++){
         struct mmap_desc md = myproc()->mmaps[j];
-        cprintf("the md valid value is: %d\n", md.valid);
         if(md.valid) {
             run = 0;
             continue;
         }
-        
         run++;
-
-        cprintf("Run is; %d\n", run);
         if(run == numberOfPagesToAllocate){
              i = j - numberOfPagesToAllocate + 1;
              break;
@@ -242,13 +214,14 @@ int sys_mmap(void)
         if(md->valid) continue;
         md->valid = true;
         md->dirty = false;
-        //md->f = f;
         md->flags = flags;
         md->prot = prot;
-        md->guard_page = flags & MAP_GROWSUP ? true : false;
+        if(j == i+run-1 && flags & MAP_GROWSUP) md->guard_page = true;
+        else md->guard_page = false;
+
         md->length = length;
         //f->ref++;
-        cprintf("The virt addr being assigned is: %d\n", va_start);
+        cprintf("The virt addr being assigned is: %d, %s\n", va_start, md->guard_page ? "true" : "false");
         md->virtualAddress = va_start;
         va_start+=PGSIZE;
     }
@@ -256,7 +229,7 @@ int sys_mmap(void)
     if(!(flags & MAP_FIXED)){
         VA_PTR = va_start;
     }
-    cprintf("The virtual address is given to mmap: %d\n", myproc()->mmaps[i].virtualAddress);
+    cprintf("Return value: %d\n", myproc()->mmaps[i].virtualAddress);
     
     
     return myproc()->mmaps[i].virtualAddress;

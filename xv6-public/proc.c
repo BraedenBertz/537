@@ -93,7 +93,7 @@ found:
   for (int i = 0; i < PAGE_LIMIT; i++)
   {
     p->mmaps[i].valid = 0; // Mark the entry as invalid
-                               // Set other initial values for the mmap_desc entries as needed
+                           // Set other initial values for the mmap_desc entries as needed
   }
 
   release(&ptable.lock);
