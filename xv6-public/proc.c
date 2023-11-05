@@ -221,7 +221,7 @@ fork(void)
      if (!md_parent->valid) { continue; }
     // if its shared, in the child, add that address to the child's mmap[i]
     if(md_parent->shared) {
-      cprintf("shared mmaping, must... add... to... child\n");
+      cprintf("shared mmaping, must... add... to... child's VA\n");
       md_child = md_parent;
       cprintf("parent: %p, child :%p\n", md_child, md_parent);
     } else {

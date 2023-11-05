@@ -30,15 +30,15 @@ objdump -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > kernel.sym
 dd if=/dev/zero of=xv6.img count=10000
 10000+0 records in
 10000+0 records out
-5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0363968 s, 141 MB/s
+5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0105625 s, 485 MB/s
 dd if=bootblock of=xv6.img conv=notrunc
 1+0 records in
 1+0 records out
-512 bytes copied, 0.000375701 s, 1.4 MB/s
+512 bytes copied, 4.7268e-05 s, 10.8 MB/s
 dd if=kernel of=xv6.img seek=1 conv=notrunc
-421+1 records in
-421+1 records out
-215852 bytes (216 kB, 211 KiB) copied, 0.00158185 s, 136 MB/s
+422+1 records in
+422+1 records out
+216400 bytes (216 kB, 211 KiB) copied, 0.000471312 s, 459 MB/s
 make: 'fs.img' is up to date.
 
 
@@ -56,8 +56,8 @@ Simple mmap with MAP_ANON | MAP_FIXED
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_1.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -83,12 +83,9 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610743808, false
-Return value: 1610743808
 MMAP	 SUCCESS
-
 
 test test_1 PASSED (1 of 1)
  (Simple mmap with MAP_ANON | MAP_FIXED)
@@ -104,8 +101,8 @@ Simple mmap/munmap with MAP_ANON | MAP_FIXED
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_2.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -131,14 +128,8 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610743808, false
-Return value: 1610743808
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
 MMAP	 SUCCESS
 
 
@@ -156,8 +147,8 @@ Access the mmap memory allocated with MAP_ANON | MAP_FIXED, then munmap
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_3.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -183,16 +174,11 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610743808, false
-Return value: 1610743808
 0|1610743808
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
 MMAP	 SUCCESS
+
 
 test test_3 PASSED (1 of 1)
  (Access the mmap memory allocated with MAP_ANON | MAP_FIXED, then munmap)
@@ -208,8 +194,8 @@ Try mmap MAP_ANON without MAP_FIXED
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_4.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -235,17 +221,10 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 0|1610612736
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
 MMAP	 SUCCESS
-
 
 test test_4 PASSED (1 of 1)
  (Try mmap MAP_ANON without MAP_FIXED)
@@ -261,8 +240,8 @@ Try to allocate memory with MAP_FIXED at an illegal address
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_5.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -288,7 +267,6 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 MMAP	 SUCCESS
 
 
@@ -304,10 +282,10 @@ mmap a file
 
 **********************************************************************
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_6.c
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
 Trying to build project using make
 make xv6.img fs.img
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -333,15 +311,9 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 0|1610612736
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
 MMAP	 SUCCESS
 
 
@@ -359,8 +331,8 @@ Changes to the mmapped memory should be reflected in file after munmap
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_7.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -386,19 +358,14 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 0|1610612736
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
 Writes to mmaped memory not reflected in file
 	Expected: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 	Got: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 MMAP	 FAILED
+
 
 test test_7 FAILED (0 of 1)
  (Changes to the mmapped memory should be reflected in file after munmap)
@@ -415,8 +382,8 @@ MAP_GROWSUP that adds a single page to anonymous mapping
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_8.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -442,19 +409,14 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 2
 The virt addr being assigned is: 1610612736, false
 The virt addr being assigned is: 1610616832, true
-Return value: 1610612736
 0|1610612736
 1|1610616832
 We hit a guard page at index 1
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
 MMAP	 SUCCESS
+
 
 test test_8 PASSED (1 of 1)
  (MAP_GROWSUP that adds a single page to anonymous mapping)
@@ -470,8 +432,8 @@ MAP_GROWSUP with file-backed mapping
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_9.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -497,24 +459,17 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 2
 The virt addr being assigned is: 1610612736, false
 The virt addr being assigned is: 1610616832, true
-Return value: 1610612736
 0|1610612736
 1|1610616832
 We hit a guard page at index 1
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
-Read from file FAILED
+in guard page trying to read another file up
+MMAP	 SUCCESS
 
-
-test test_9 FAILED (0 of 1)
+test test_9 PASSED (1 of 1)
  (MAP_GROWSUP with file-backed mapping)
- tester failed
 
 starting test_10
 
@@ -527,8 +482,8 @@ Try growing memory without MAP_GROWSUP - should segfault
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_10.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -554,10 +509,8 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 0|1610612736
 Segmentation Fault 1
 
@@ -576,8 +529,8 @@ Two MAP_GROWSUP mappings with a single guard page in between - the lower should 
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_11.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -603,16 +556,12 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 2
 The virt addr being assigned is: 1610612736, false
 The virt addr being assigned is: 1610616832, true
-Return value: 1610612736
-In sys_map
 Number of pages to allocate: 2
 The virt addr being assigned is: 1610620928, false
 The virt addr being assigned is: 1610625024, true
-Return value: 1610620928
 0|1610612736
 1|1610616832
 We hit a guard page at index 1
@@ -633,8 +582,8 @@ Child access to parent mmap
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_12.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -660,10 +609,8 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 1610612736
 Segmentation Fault 1
 
@@ -683,8 +630,8 @@ Changes made to mmapped memory should not be reflected in file when MAP_PRIVATE 
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_13.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -710,17 +657,11 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 0|1610612736
-In the sys_munmap function in sysfile.c
-In sysfile.c gonna run logic for munmap and free the mmap_desc struct
-Before the file close
-After the file close
 MMAP	 SUCCESS
-$ 
+
 
 test test_13 PASSED (1 of 1)
  (Changes made to mmapped memory should not be reflected in file when MAP_PRIVATE is set)
@@ -736,8 +677,8 @@ Child should access file data with MAP_PRIVATE flag
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_14.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -763,10 +704,8 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 1610612736
 Segmentation Fault 1
 
@@ -786,8 +725,8 @@ Parent should not see child mofications to memory with MAP_PRIVATE
 Running xv6 user progam /home/cs537-1/tests/P5/ctests/test_15.c
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpllhpu3dv/p/Makefile
-/tmp/tmpllhpu3dv/p/Makefile.test
+/tmp/tmpykb0_iuv/p/Makefile
+/tmp/tmpykb0_iuv/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -813,10 +752,8 @@ sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap star
 init: starting sh
 $ tester
 tester
-In sys_map
 Number of pages to allocate: 1
 The virt addr being assigned is: 1610612736, false
-Return value: 1610612736
 0|1610612736
 1610612736
 Segmentation Fault 1
@@ -856,9 +793,8 @@ test test_7 FAILED (0 of 1)
 test test_8 PASSED (1 of 1)
  (MAP_GROWSUP that adds a single page to anonymous mapping)
 
-test test_9 FAILED (0 of 1)
+test test_9 PASSED (1 of 1)
  (MAP_GROWSUP with file-backed mapping)
- tester failed
 
 test test_10 PASSED (1 of 1)
  (Try growing memory without MAP_GROWSUP - should segfault)
@@ -881,6 +817,6 @@ test test_15 FAILED (0 of 1)
  (Parent should not see child mofications to memory with MAP_PRIVATE)
  seg fault
 
-Passed 11 of 16 tests.
-Overall 11 of 16
-Points 10 of 15
+Passed 12 of 16 tests.
+Overall 12 of 16
+Points 11 of 15

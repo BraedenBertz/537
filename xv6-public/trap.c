@@ -124,12 +124,19 @@ void trap(struct trapframe *tf)
                 //set the mmaps[i+1] to be the new guard_page
                 myproc()->mmaps[i + 1].valid = true;
                 myproc()->mmaps[i + 1].guard_page = true;
+                if (md->flags & MAP_ANON)
+                {
+                }
+                else
+                {
+                    cprintf("in guard page trying to read another file up\n");
+                    fileread(md->f, (char *)fault_addr_head, PGSIZE);
+                }
             }
         }
         else
         {
             //not a guard page, but is valid, go ahead and alloc this page
-
             char *mem = kalloc();
             if (mem == NULL)
                 panic("kalloc");

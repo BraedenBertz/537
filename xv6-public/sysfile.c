@@ -60,7 +60,7 @@ fdalloc(struct file *f)
 // make a function that makes a deep copy of mmap_desc
 
 void munmap_free(struct mmap_desc* md, int addr, int length){
-    cprintf("In sysfile.c gonna run logic for munmap and free the mmap_desc struct\n");
+    //cprintf("In sysfile.c gonna run logic for munmap and free the mmap_desc struct\n");
     int length_check = 0;
     for(int i = 0; i < PAGE_LIMIT; i++)
     {
@@ -77,9 +77,11 @@ void munmap_free(struct mmap_desc* md, int addr, int length){
             md->shared = 0;
             md->valid = 0;
             md->guard_page = 0;
-            cprintf("Before the file close\n");
-                //fileclose(md->f);
-            cprintf("After the file close\n");
+            if(md->f != NULL && md->f->ref <= 0) {
+                cprintf("closing file\n");
+                fileclose(md->f);
+                md->f = NULL;
+            }
             md->already_alloced = 0;
 
         }   
@@ -94,14 +96,14 @@ void munmap()
     // may need another function to see if the page is dirty: ie it has been written
     // to and then will need to write to that file. Possibly won't need thisk, but keep in mind if needed. 
     // implement the freeing logic of munmap here
-    cprintf("In vm.c in the munmap method\n");
+    //cprintf("In vm.c in the munmap method\n");
 }
 
 // munmap returns 0 to indicate success, and -1 for failure.
 // int munmap(void *addr, size_t length)
 int sys_munmap(void)
 {
-    cprintf("In the sys_munmap function in sysfile.c\n");
+    //cprintf("In the sys_munmap function in sysfile.c\n");
     int addr;
     int length;
     if (argint(0, &addr) < 0 || argint(1, &length) < 0)
@@ -115,6 +117,27 @@ int sys_munmap(void)
         return RETURN_ERR;
     }
 
+    //determine if we write
+    int j = 0;
+    struct mmap_desc* to_free[PAGE_LIMIT];
+    for(int _addr = addr; _addr < length+addr; _addr+=PGSIZE) {
+        for(int i = 0; i < PAGE_LIMIT; i++) {
+            struct mmap_desc* md = &myproc()->mmaps[i];
+            if(!md->valid) continue;
+            if(md->virtualAddress <= _addr && md->virtualAddress+PGSIZE > _addr) {
+                //addr is within this memory region, so we are going to unmap this mmap_desc
+                to_free[j++] = md;
+            }
+        }
+    }
+
+    //for all of the mumap regions, we write to file if its file-backed
+    for(int i =0; i < j; i++) {
+        struct mmap_desc* md = to_free[i];
+        if(md->f == NULL) continue;
+        filewrite(md->f, (char*)md->virtualAddress, PGSIZE);
+        md->f->ref--;
+    }
 
     munmap_free(myproc()->mmaps, addr, length);
 
@@ -125,7 +148,7 @@ int sys_munmap(void)
 //Validates the user's inputs and calls the implementation of mmap
 int sys_mmap(void)
 {
-    cprintf("In sys_map\n");
+    //cprintf("In sys_map\n");
     int va_start = VA_PTR;
     int addr, length, prot, fd, flags, offset = 0;
     struct file *f;
@@ -197,7 +220,9 @@ int sys_mmap(void)
     if(i == -1) {
         return RETURN_ERR;
     }
+
     
+
     for(j = i; j < i + run; j++) {
         struct mmap_desc *md = &myproc()->mmaps[j];
         if(md->valid) continue;
@@ -207,12 +232,19 @@ int sys_mmap(void)
         md->prot = prot;
         if(j == i+run-1 && flags & MAP_GROWSUP) md->guard_page = true;
         else md->guard_page = false;
-        if(!(flags & MAP_ANON)) {
-            if(argfd(4, &fd, &f) < 0) return RETURN_ERR;
+        if (!(flags & MAP_ANON))
+        {
+            if (argfd(4, &fd, &f) < 0)
+                return RETURN_ERR;
             md->f = f;
+            f->ref++;
+        }
+        else
+        {
+            md->f = NULL;
         }
         md->length = length;
-        //f->ref++;
+        
         cprintf("The virt addr being assigned is: %d, %s\n", va_start, md->guard_page ? "true" : "false");
         md->virtualAddress = va_start;
         va_start+=PGSIZE;
@@ -221,7 +253,7 @@ int sys_mmap(void)
     if(!(flags & MAP_FIXED)){
         VA_PTR = va_start;
     }
-    cprintf("Return value: %d\n", myproc()->mmaps[i].virtualAddress);
+    //cprintf("Return value: %d\n", myproc()->mmaps[i].virtualAddress);
     
     
     return myproc()->mmaps[i].virtualAddress;
