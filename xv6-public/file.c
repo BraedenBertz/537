@@ -91,13 +91,27 @@ filestat(struct file *f, struct stat *st)
   }
   return -1;
 }
+int mmap_read(struct file* f, char* addr, int size) {
+  f->off = 0;
+  return fileread(f, addr, size);
+}
+
+int mmap_write2(struct file *f, char *addr, int size)
+{
+  f->off = 0;
+  return filewrite(f, addr, size);
+}
+
+int mmap_write(struct file *f, char *addr, int size) { 
+  //f->off = 0;
+  return filewrite(f, addr, size);
+}
 
 // Read from file f.
 int
 fileread(struct file *f, char *addr, int n)
 {
   int r;
-
   if(f->readable == 0)
     return -1;
   if(f->type == FD_PIPE)
@@ -112,37 +126,16 @@ fileread(struct file *f, char *addr, int n)
   panic("fileread");
 }
 
-int mmap_read(struct file *f, char *va, int off, int size)
-{
-  ilock(f->ip);
-  // read to user space VA.
-  int n = readi(f->ip, va, off, size);
-  off += n;
-  iunlock(f->ip);
-  return off;
-}
-
-int mmap_write(struct file* f, char* va, int off, int size) {
-  begin_op(f->ip->dev);
-  ilock(f->ip);
-  writei(f->ip, va, 0, size);
-  iunlock(f->ip);
-  end_op(f->ip->dev);
-  return off;
-}
-
 //PAGEBREAK!
 // Write to file f.
 int
 filewrite(struct file *f, char *addr, int n)
 {
   int r;
-
   if(f->writable == 0)
     return -1;
-  if(f->type == FD_PIPE) {
+  if(f->type == FD_PIPE)
     return pipewrite(f->pipe, addr, n);
-  }
   if(f->type == FD_INODE){
     // write a few blocks at a time to avoid exceeding
     // the maximum log transaction size, including

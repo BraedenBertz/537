@@ -117,18 +117,20 @@ void trap(struct trapframe *tf)
                 long fault_addr_head = PGROUNDDOWN(fault_addr);
                 if (mappages(myproc()->pgdir, (void *)fault_addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
                 {
+                    panic("mappapges");
                     kfree(mem);
                     myproc()->killed = 1;
                 }
                 //set the mmaps[i+1] to be the new guard_page
                 myproc()->mmaps[i + 1].valid = true;
                 myproc()->mmaps[i + 1].guard_page = true;
-                if (md->flags & MAP_ANON)
-                {
-                }
+                if (md->flags & MAP_ANON){}
                 else
                 {
-                    mmap_read(md->f, (char *)fault_addr_head, 0, PGSIZE);
+                    char *buff = kalloc();
+                    memset(buff, 0, PGSIZE);
+                    mmap_read(md->f, buff, PGSIZE);
+                    memmove(mem, buff, PGSIZE);
                 }
             }
         }
@@ -147,10 +149,10 @@ void trap(struct trapframe *tf)
             }
             if(md->flags & MAP_ANON) {}
             else {
-                cprintf("reading file to memory: %p", (char *)fault_addr_head);
-                //fileread(md->f, mem, PGSIZE);
-                mmap_read(md->f, (char *)fault_addr_head, 0, PGSIZE);
-                cprintf("kernel read: %s\n", mem);
+                char* buff = kalloc();
+                memset(buff, 0, PGSIZE);
+                mmap_read(md->f, buff, PGSIZE);
+                memmove(mem, buff, PGSIZE);
             }
         }
         

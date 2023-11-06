@@ -125,18 +125,12 @@ int sys_munmap(void)
             }
         }
     }
-
-
-    // char buffer[PGSIZE];
-    // for(int i = 0; i < PGSIZE; i++) {
-    //     buffer[i] = '+';
-    // }
-    // cprintf("testing filewrite\n");
+    if(j != 0) to_free[0]->f->off = 0;
     //for all of the mumap regions, we write to file if its file-backed
-    for(int i =0; i < j; i++) {
+    for(int i = 0; i < j; i++) {
         struct mmap_desc* md = to_free[i];
         if(md->f == NULL) continue;
-        mmap_write(md->f, (char *)md->virtualAddress, 0, PGSIZE);
+        filewrite(md->f, (char *)md->virtualAddress, PGSIZE);
         // filewrite(md->f, buffer, PGSIZE);
         //  char read_buffer[PGSIZE];
         //  fileread(md->f, read_buffer, PGSIZE);
@@ -227,8 +221,6 @@ int sys_mmap(void)
         return RETURN_ERR;
     }
 
-    
-
     for(j = i; j < i + run; j++) {
         struct mmap_desc *md = &myproc()->mmaps[j];
         if(md->valid) continue;
@@ -250,7 +242,7 @@ int sys_mmap(void)
         }
         md->length = length;
         
-        cprintf("The virt addr being assigned is: %d, %s\n", va_start, md->guard_page ? "true" : "false");
+        cprintf("The virt addr being assigned is: %p, %s\n", (char*)va_start, md->guard_page ? "true" : "false");
         md->virtualAddress = va_start;
         va_start+=PGSIZE;
     }

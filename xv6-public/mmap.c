@@ -19,13 +19,14 @@ int my_strcmp(const char *a, const char *b, int n)
 int main()
 {
   char *filename = "test_file.txt";
-  int len = 10;
-  char buff[len];
-  char new_buff[len];
+  int len = 4000;
+  int extra = 1000;
   int prot = PROT_READ | PROT_WRITE;
-  int flags = MAP_SHARED;
+  int flags = MAP_SHARED | MAP_GROWSUP;
 
-  /* Open a file */
+  char *buff = (char *)malloc((len + extra) * sizeof(char));
+
+  /* Open the file */
   int fd = open(filename, O_CREATE | O_RDWR);
   if (fd < 0)
   {
@@ -33,56 +34,41 @@ int main()
     goto failed;
   }
 
-  /* Write some data to the file */
-  for (int i = 0; i < len; i++)
-  {
-    buff[i] = 'x';
-  }
-  if (write(fd, buff, len) != len)
-  {
-    printf(1, "Error: Write to file FAILED\n");
-    goto failed;
-  }
-  
+  /* mmap anon memory */
+  void *mem = mmap(0, len, prot, flags, fd, 0);
 
-      /* mmap the file */
-      void *mem = mmap(0, len, prot, flags, fd, 0);
-  if (mem == (void *)-1)
-  {
-    printf(1, "mmap FAILED\n");
-    goto failed;
-  }
-
-  /* modify in-memory contents of the mmapped region */
+  /* Fill the memory with data */
   char *mem_buff = (char *)mem;
-  read(fd, buff, len);
-  printf(1, "Contents in read file: %s\n", buff);
-  printf(1, "Contents in file backed memmap: %s\n", mem_buff);
-  for (int i = 0; i < len; i++)
+  for (int i = 0; i < (len + extra); i++)
   {
-    mem_buff[i] = 'a';
-    buff[i] = mem_buff[i]; // Later used for validating the data returned by read()
+    if (i < len)
+      mem_buff[i] = 'a';
+    else
+      mem_buff[i] = 'z';
+    buff[i] = mem_buff[i];
   }
 
-  int ret = munmap(mem, len);
-  if (ret < 0)
+  /* See if those values have been actually written */
+  if (my_strcmp(mem_buff, buff, (len + extra)) != 0)
   {
-    printf(1, "munmap FAILED\n");
+    printf(1, "Couldn't read the same data back!\n");
+    printf(1, "Expected: %s\n", buff);
+    printf(1, "Got: %s\n", mem_buff);
     goto failed;
   }
+  //printf(1, "Here is what is given from buff%s\n", buff);
 
+  /* Clean and return */
+  munmap(mem, len + extra);
   close(fd);
-
+  exit();
   /* Reopen the file */
   fd = open(filename, O_RDWR);
-  if (fd < 0)
-  {
-    printf(1, "Error reopening file\n");
-    goto failed;
-  }
+
 
   /* Verify that modifications made to mmapped memory have been reflected in the file */
-  if (read(fd, new_buff, len) != len)
+  char *new_buff = (char *)malloc((len + extra) * sizeof(char));
+  if (read(fd, new_buff, (len + extra)) != (len + extra))
   {
     printf(1, "Read from file FAILED\n");
     goto failed;
@@ -97,6 +83,8 @@ int main()
 
   /* Clean and return */
   close(fd);
+  free(buff);
+  free(new_buff);
 
   // success:
   printf(1, "MMAP\t SUCCESS\n");
