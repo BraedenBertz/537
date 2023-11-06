@@ -174,8 +174,9 @@ extern struct spinlock tickslock;
 void            uartinit(void);
 void            uartintr(void);
 void            uartputc(int);
-
+typedef uint pte_t;
 // vm.c
+pte_t * walkpgdir(pde_t *pgdir, const void *va, int alloc);
 int mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
 void seginit(void);
 void            kvmalloc(void);
@@ -192,6 +193,5 @@ void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
 void            munmap();
-
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

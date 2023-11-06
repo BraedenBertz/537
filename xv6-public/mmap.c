@@ -19,14 +19,12 @@ int my_strcmp(const char *a, const char *b, int n)
 int main()
 {
   char *filename = "test_file.txt";
-  int len = 4000;
-  int extra = 1000;
+  int len = 100;
   int prot = PROT_READ | PROT_WRITE;
-  int flags = MAP_SHARED | MAP_GROWSUP;
+  int flags = MAP_SHARED;
+  char buff[len];
 
-  char *buff = (char *)malloc((len + extra) * sizeof(char));
-
-  /* Open the file */
+  /* Open a file */
   int fd = open(filename, O_CREATE | O_RDWR);
   if (fd < 0)
   {
@@ -34,57 +32,54 @@ int main()
     goto failed;
   }
 
-  /* mmap anon memory */
+  /* Write some data to the file */
+  for (int i = 0; i < len; i++)
+  {
+    buff[i] = (char)(i % 256);
+  }
+  if (write(fd, buff, len) != len)
+  {
+    printf(1, "Error: Write to file FAILED\n");
+    goto failed;
+  }
+  close(fd);
+
+  fd = open(filename, O_CREATE | O_RDWR);
+
+  /* mmap the file */
   void *mem = mmap(0, len, prot, flags, fd, 0);
-
-  /* Fill the memory with data */
-  char *mem_buff = (char *)mem;
-  for (int i = 0; i < (len + extra); i++)
+  if (mem == (void *)-1)
   {
-    if (i < len)
-      mem_buff[i] = 'a';
-    else
-      mem_buff[i] = 'z';
-    buff[i] = mem_buff[i];
-  }
-
-  /* See if those values have been actually written */
-  if (my_strcmp(mem_buff, buff, (len + extra)) != 0)
-  {
-    printf(1, "Couldn't read the same data back!\n");
-    printf(1, "Expected: %s\n", buff);
-    printf(1, "Got: %s\n", mem_buff);
-    goto failed;
-  }
-  //printf(1, "Here is what is given from buff%s\n", buff);
-
-  /* Clean and return */
-  munmap(mem, len + extra);
-  close(fd);
-  exit();
-  /* Reopen the file */
-  fd = open(filename, O_RDWR);
-
-
-  /* Verify that modifications made to mmapped memory have been reflected in the file */
-  char *new_buff = (char *)malloc((len + extra) * sizeof(char));
-  if (read(fd, new_buff, (len + extra)) != (len + extra))
-  {
-    printf(1, "Read from file FAILED\n");
-    goto failed;
-  }
-  if (my_strcmp(new_buff, buff, len) != 0)
-  {
-    printf(1, "Writes to mmaped memory not reflected in file\n");
-    printf(1, "\tExpected: %s\n", buff);
-    printf(1, "\tGot: %s\n", new_buff);
+    printf(1, "mmap FAILED\n");
     goto failed;
   }
 
-  /* Clean and return */
-  close(fd);
-  free(buff);
-  free(new_buff);
+  printf(1, "Just about to call fork\n");
+  /* Fork */
+  int pid = fork();
+  if (pid == 0)
+  {
+    /* Verify the child can read the same data */
+    char *mem_buff = (char *)mem;
+    if (my_strcmp(mem_buff, buff, len) != 0)
+    {
+      printf(1, "Data mismatch in child\n");
+      goto failed;
+    }
+  }
+  else
+  {
+    wait();
+    /* Clean and return */
+    int ret = munmap(mem, len);
+    if (ret < 0)
+    {
+      printf(1, "munmap FAILED\n");
+      goto failed;
+    }
+
+    close(fd);
+  }
 
   // success:
   printf(1, "MMAP\t SUCCESS\n");

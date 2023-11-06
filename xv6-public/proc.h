@@ -61,3 +61,5 @@ struct proc
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+extern void allocatePageGuard(struct proc *proc, struct mmap_desc *md, long addr_head, int i);
+extern void allocatePageNonGuard(struct proc *proc, struct mmap_desc *md, long addr_head);

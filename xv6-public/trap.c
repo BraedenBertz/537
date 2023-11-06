@@ -92,71 +92,71 @@ void trap(struct trapframe *tf)
         }
         if(i == PAGE_LIMIT) {
             //wasn't in our mapping
-            cprintf("Segmentation Fault\n");
-            kill(myproc()->pid);
-            break;
+            cprintf("Segmentation Fault %p\n", (char*)fault_addr);
+            myproc()->killed = true;
         }
         // its a guard page
-        if (md->guard_page)
+        else if (md->guard_page)
         {
-            cprintf("We hit a guard page at index %d\n", i);
-            //see if we can grow up by one page
+            // cprintf("We hit a guard page at index %d\n", i);
+            // //see if we can grow up by one page
 
-            if(myproc()->mmaps[i+1].valid)
-            {
-                //sadly we cannot
-                cprintf("Segmentation Fault\n");
-                myproc()->killed = 1;
-            } else {
-                md->guard_page = false;
-                //alloc this
-                char *mem = kalloc();
-                if (mem == NULL)
-                    panic("kalloc");
-                memset(mem, 0, PGSIZE);
-                long fault_addr_head = PGROUNDDOWN(fault_addr);
-                if (mappages(myproc()->pgdir, (void *)fault_addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
-                {
-                    panic("mappapges");
-                    kfree(mem);
-                    myproc()->killed = 1;
-                }
-                //set the mmaps[i+1] to be the new guard_page
-                myproc()->mmaps[i + 1].valid = true;
-                myproc()->mmaps[i + 1].guard_page = true;
-                if (md->flags & MAP_ANON){}
-                else
-                {
-                    char *buff = kalloc();
-                    memset(buff, 0, PGSIZE);
-                    mmap_read(md->f, buff, PGSIZE);
-                    memmove(mem, buff, PGSIZE);
-                }
-            }
+            // if(myproc()->mmaps[i+1].valid)
+            // {
+            //     //sadly we cannot
+            //     cprintf("Segmentation Fault with guard page\n");
+            //     myproc()->killed = 1;
+            // } else {
+            //     md->guard_page = false;
+            //     //alloc this
+            //     char *mem = kalloc();
+            //     if (mem == NULL)
+            //         panic("kalloc");
+            //     memset(mem, 0, PGSIZE);
+            //     long fault_addr_head = PGROUNDDOWN(fault_addr);
+            //     if (mappages(myproc()->pgdir, (void *)fault_addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
+            //     {
+            //         panic("mappapges");
+            //         kfree(mem);
+            //         myproc()->killed = 1;
+            //     }
+            //     //set the mmaps[i+1] to be the new guard_page
+            //     myproc()->mmaps[i + 1].valid = true;
+            //     myproc()->mmaps[i + 1].guard_page = true;
+            //     if (md->flags & MAP_ANON){}
+            //     else
+            //     {
+            //         char *buff = kalloc();
+            //         memset(buff, 0, PGSIZE);
+            //         mmap_read(md->f, buff, PGSIZE);
+            //         memmove(mem, buff, PGSIZE);
+            //     }
+            // }
+            allocatePageGuard(myproc(), md, fault_addr, i);
         }
         else
         {
-            //not a guard page, but is valid, go ahead and alloc this page
-            char *mem = kalloc();
-            if (mem == NULL)
-                panic("kalloc");
-            memset(mem, 0, PGSIZE);
-            long fault_addr_head = PGROUNDDOWN(fault_addr);
-            if (mappages(myproc()->pgdir, (void*)fault_addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
-            {
-                kfree(mem);
-                myproc()->killed = 1;
-            }
-            if(md->flags & MAP_ANON) {}
-            else {
-                char* buff = kalloc();
-                memset(buff, 0, PGSIZE);
-                mmap_read(md->f, buff, PGSIZE);
-                memmove(mem, buff, PGSIZE);
-            }
+            // //not a guard page, but is valid, go ahead and alloc this page
+            // char *mem = kalloc();
+            // if (mem == NULL)
+            //     panic("kalloc");
+            // memset(mem, 0, PGSIZE);
+            // long fault_addr_head = PGROUNDDOWN(fault_addr);
+            // if (mappages(myproc()->pgdir, (void*)fault_addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
+            // {
+            //     kfree(mem);
+            //     myproc()->killed = 1;
+            //     exit();
+            // }
+            // if(md->flags & MAP_ANON) {}
+            // else {
+            //     char* buff = kalloc();
+            //     memset(buff, 0, PGSIZE);
+            //     mmap_read(md->f, buff, PGSIZE);
+            //     memmove(mem, buff, PGSIZE);
+            // }
+            allocatePageNonGuard(myproc(), md, fault_addr);
         }
-        
-        //cprintf("breeaking from trapc\n");
         break;
     case T_IRQ0 + 7:
     case T_IRQ0 + IRQ_SPURIOUS:
