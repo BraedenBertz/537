@@ -59,8 +59,6 @@ fdalloc(struct file *f)
 }
 // make a function that makes a deep copy of mmap_desc
 
-
-
 void munmap_free(struct mmap_desc* md, int addr, int length){
     //cprintf("In sysfile.c gonna run logic for munmap and free the mmap_desc struct\n");
     int length_check = 0;
@@ -132,12 +130,18 @@ int sys_munmap(void)
     for(int i = 0; i < j; i++) {
         struct mmap_desc* md = to_free[i];
         if(md->f == NULL) continue;
-        filewrite(md->f, (char *)md->virtualAddress, PGSIZE);
-        // filewrite(md->f, buffer, PGSIZE);
-        //  char read_buffer[PGSIZE];
-        //  fileread(md->f, read_buffer, PGSIZE);
-        //  cprintf("read\n");
-        //  cprintf("%s\n", read_buffer);
+
+
+        // SOMETHING IS WRONG HERE!!!
+        if(md->flags & MAP_PRIVATE){
+            if(!md->isChildOfParent){
+                filewrite(md->f, (char *)md->virtualAddress, PGSIZE);
+
+            }
+        }
+        else{continue;}
+        
+
         fileclose(md->f);
     }
     
@@ -145,6 +149,7 @@ int sys_munmap(void)
 
     return 0;
 }
+
 
 // void* mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 //Validates the user's inputs and calls the implementation of mmap
