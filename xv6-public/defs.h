@@ -35,9 +35,11 @@ void            fileinit(void);
 int             fileread(struct file*, char*, int n);
 int             filestat(struct file*, struct stat*);
 int             filewrite(struct file*, char*, int n);
+int mmap_read(struct file *f, char *va, int off, int size);
+int mmap_write(struct file *f, char *va, int off, int size);
 
 // fs.c
-void            readsb(int dev, struct superblock *sb);
+void readsb(int dev, struct superblock *sb);
 int             dirlink(struct inode*, char*, uint);
 struct inode*   dirlookup(struct inode*, char*, uint*);
 struct inode*   ialloc(uint, short);

@@ -86,14 +86,13 @@ void trap(struct trapframe *tf)
             else if (md->virtualAddress <= fault_addr 
             && md->virtualAddress + PAGE_SIZE > fault_addr)
             {
-                cprintf("%d|%d\n", i, md->virtualAddress);
                 //this is our mmap_descriptor for this address
                 break;
             }
         }
         if(i == PAGE_LIMIT) {
             //wasn't in our mapping
-            cprintf("Segmentation Fault 1\n");
+            cprintf("Segmentation Fault\n");
             kill(myproc()->pid);
             break;
         }
@@ -129,8 +128,7 @@ void trap(struct trapframe *tf)
                 }
                 else
                 {
-                    cprintf("in guard page trying to read another file up\n");
-                    fileread(md->f, (char *)fault_addr_head, PGSIZE);
+                    mmap_read(md->f, (char *)fault_addr_head, 0, PGSIZE);
                 }
             }
         }
@@ -149,7 +147,10 @@ void trap(struct trapframe *tf)
             }
             if(md->flags & MAP_ANON) {}
             else {
-                fileread(md->f, (char*)fault_addr_head, PGSIZE);
+                cprintf("reading file to memory: %p", (char *)fault_addr_head);
+                //fileread(md->f, mem, PGSIZE);
+                mmap_read(md->f, (char *)fault_addr_head, 0, PGSIZE);
+                cprintf("kernel read: %s\n", mem);
             }
         }
         

@@ -77,13 +77,8 @@ void munmap_free(struct mmap_desc* md, int addr, int length){
             md->shared = 0;
             md->valid = 0;
             md->guard_page = 0;
-            if(md->f != NULL && md->f->ref <= 0) {
-                cprintf("closing file\n");
-                fileclose(md->f);
-                md->f = NULL;
-            }
+            md->f = NULL;
             md->already_alloced = 0;
-
         }   
     }
 }
@@ -131,14 +126,25 @@ int sys_munmap(void)
         }
     }
 
+
+    // char buffer[PGSIZE];
+    // for(int i = 0; i < PGSIZE; i++) {
+    //     buffer[i] = '+';
+    // }
+    // cprintf("testing filewrite\n");
     //for all of the mumap regions, we write to file if its file-backed
     for(int i =0; i < j; i++) {
         struct mmap_desc* md = to_free[i];
         if(md->f == NULL) continue;
-        filewrite(md->f, (char*)md->virtualAddress, PGSIZE);
-        md->f->ref--;
+        mmap_write(md->f, (char *)md->virtualAddress, 0, PGSIZE);
+        // filewrite(md->f, buffer, PGSIZE);
+        //  char read_buffer[PGSIZE];
+        //  fileread(md->f, read_buffer, PGSIZE);
+        //  cprintf("read\n");
+        //  cprintf("%s\n", read_buffer);
+        fileclose(md->f);
     }
-
+    
     munmap_free(myproc()->mmaps, addr, length);
 
     return 0;
@@ -236,8 +242,7 @@ int sys_mmap(void)
         {
             if (argfd(4, &fd, &f) < 0)
                 return RETURN_ERR;
-            md->f = f;
-            f->ref++;
+            md->f = filedup(f);
         }
         else
         {
