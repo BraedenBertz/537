@@ -96,6 +96,7 @@ found:
     {
         p->mmaps[i].valid = 0; // Mark the entry as invalid
                                // Set other initial values for the mmap_desc entries as needed
+                               p->mmaps[i].isChildOfParent = false;
     }
 
     release(&ptable.lock);
@@ -241,13 +242,12 @@ void allocatePageNonGuard(struct proc *proc, struct mmap_desc *md, long addr_hea
 
 void allocatePageGuard(struct proc *proc, struct mmap_desc *md, long addr_head, int i)
 {
-    cprintf("We hit a guard page at index %d\n", i);
     // see if we can grow up by one page
 
     if (proc->mmaps[i + 1].valid)
     {
         // sadly we cannot
-        cprintf("Segmentation Fault with guard page\n");
+        cprintf("Segmentation Fault\n");
         proc->killed = 1;
     }
     else
@@ -332,13 +332,13 @@ int copy_maps(struct proc *parent, struct proc *child)
             if (mem == NULL)
                 exit();
             char *pmem = (char *)P2V(parentPage);
-            memmove(mem, pmem, PGSIZE);
             if (mappages(child->pgdir, (char *)virt_addr, PGSIZE, V2P(mem),
-                         protection) < 0)
+                         protection | PTE_U) != 0)
             {
                 // ERROR: Private mappages failed
-                exit();
+                panic("ahahah");
             }
+            memmove(mem, pmem, PGSIZE);
         }
         deep_copy(md_p, md_c);
     }

@@ -92,7 +92,7 @@ void trap(struct trapframe *tf)
         }
         if(i == PAGE_LIMIT) {
             //wasn't in our mapping
-            cprintf("Segmentation Fault %p\n", (char*)fault_addr);
+            cprintf("Segmentation Fault\n");
             myproc()->killed = true;
         }
         // its a guard page

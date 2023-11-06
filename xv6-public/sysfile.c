@@ -131,15 +131,12 @@ int sys_munmap(void)
         struct mmap_desc* md = to_free[i];
         if(md->f == NULL) continue;
 
-
-        // SOMETHING IS WRONG HERE!!!
         if(md->flags & MAP_PRIVATE){
-            if(!md->isChildOfParent){
-                filewrite(md->f, (char *)md->virtualAddress, PGSIZE);
-
-            }
+            
         }
-        else{continue;}
+        else{
+            filewrite(md->f, (char *)md->virtualAddress, PGSIZE);
+        }
         
 
         fileclose(md->f);
@@ -198,7 +195,6 @@ int sys_mmap(void)
                 if(md.virtualAddress <= currAddr && 
                     currAddr < md.virtualAddress+PAGE_SIZE) {
                     //this is already mapped region,
-                    cprintf("Return statement from fixed region intercepts other mapping: %d\n", RETURN_ERR); 
                     return RETURN_ERR;
                 }
             }
@@ -206,7 +202,6 @@ int sys_mmap(void)
         va_start = addr;
     }
 
-    cprintf("Number of pages to allocate: %d\n", numberOfPagesToAllocate);
 
     // if flag is MAP_ANONYMOUS can ignore offset and fd
     int run = 0;
@@ -249,7 +244,6 @@ int sys_mmap(void)
         }
         md->length = length;
         
-        cprintf("The virt addr being assigned is: %p, %s\n", (char*)va_start, md->guard_page ? "true" : "false");
         md->virtualAddress = va_start;
         va_start+=PGSIZE;
     }
