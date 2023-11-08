@@ -25,9 +25,9 @@
 #define PAGE_LIMIT 32
 
 extern int VA_PTR;
-
 struct mmap_desc
 {
+    char* page;
     int length;         // the length in bits (bytes?)
     int virtualAddress; // the start of the virtual address
     int flags;          // flags associated with this mmap
@@ -38,6 +38,7 @@ struct mmap_desc
     int guard_page;     // 1 if it is a guard page, 0 otherwise
     int hasFile;
     int isChildOfParent;
+    int ref;
      struct file *f; // the file its associated with
     int already_alloced;//if the associated descriptor is already alloced
 };

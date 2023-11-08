@@ -22,6 +22,87 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+// Get physical Address of page from virtual address of process
+uint get_physical_page(struct proc *p, uint tempaddr, pte_t **pte)
+{
+    *pte = walkpgdir(p->pgdir, (char *)tempaddr, 0);
+
+    if (!*pte)
+    {
+        return 0;
+    }
+    uint pa = PTE_ADDR(**pte);
+    return pa;
+}
+
+void allocatePageNonGuard(struct proc *proc, struct mmap_desc *md, long addr_head)
+{
+    char *mem = kalloc();
+    if (mem == NULL)
+        panic("kalloc");
+    memset(mem, 0, PGSIZE);
+    addr_head = PGROUNDDOWN(addr_head);
+    if (mappages(proc->pgdir, (void *)addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
+    {
+        kfree(mem);
+        myproc()->killed = 1;
+        exit();
+    }
+    if (md->flags & MAP_ANON)
+    {
+    }
+    else
+    {
+        char *buff = kalloc();
+        memset(buff, 0, PGSIZE);
+        mmap_read(md->f, buff, PGSIZE);
+        memmove(mem, buff, PGSIZE);
+        md->page = buff;
+    }
+}
+
+void allocatePageGuard(struct proc *proc, struct mmap_desc *md, long addr_head, int i)
+{
+    // see if we can grow up by one page
+
+    if (proc->mmaps[i + 1].valid)
+    {
+        // sadly we cannot
+        cprintf("Segmentation Fault\n");
+        proc->killed = 1;
+    }
+    else
+    {
+        md->guard_page = false;
+        // alloc this
+        char *mem = kalloc();
+        if (mem == NULL)
+            panic("kalloc");
+        memset(mem, 0, PGSIZE);
+        addr_head = PGROUNDDOWN(addr_head);
+        if (mappages(proc->pgdir, (void *)addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
+        {
+            panic("mappapges");
+            kfree(mem);
+            proc->killed = 1;
+        }
+        // set the mmaps[i+1] to be the new guard_page
+        proc->mmaps[i + 1].valid = true;
+        proc->mmaps[i + 1].guard_page = true;
+        if (md->flags & MAP_ANON)
+        {
+        }
+        else
+        {
+            char *buff = kalloc();
+            memset(buff, 0, PGSIZE);
+            mmap_read(md->f, buff, PGSIZE);
+            memmove(mem, buff, PGSIZE);
+            md->page = buff;
+        }
+    }
+}
+
 void pinit(void)
 {
     initlock(&ptable.lock, "ptable");
@@ -188,7 +269,6 @@ int growproc(int n)
 
 void deep_copy(struct mmap_desc *old, struct mmap_desc *new)
 {
-    cprintf("doing deep copy: %p\n", old->virtualAddress);
     // copies old to new as deep copy
     new->length = old->length;
     new->virtualAddress = old->virtualAddress;
@@ -202,83 +282,27 @@ void deep_copy(struct mmap_desc *old, struct mmap_desc *new)
     new->already_alloced = old->already_alloced;
 }
 
-// Get physical Address of page from virtual address of process
-uint get_physical_page(struct proc *p, uint tempaddr, pte_t **pte)
+
+void munmap_free(struct mmap_desc *md)
 {
-    *pte = walkpgdir(p->pgdir, (char *)tempaddr, 0);
+    if(!md->valid) return;
+    md->ref--;
+    if (md->ref != 0)
+        return;
 
-    if (!*pte)
-    {
-        return 0;
-    }
-    uint pa = PTE_ADDR(**pte);
-    return pa;
-}
-
-void allocatePageNonGuard(struct proc *proc, struct mmap_desc *md, long addr_head)
-{
-    char *mem = kalloc();
-    if (mem == NULL)
-        panic("kalloc");
-    memset(mem, 0, PGSIZE);
-    addr_head = PGROUNDDOWN(addr_head);
-    if (mappages(proc->pgdir, (void *)addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
-    {
-        kfree(mem);
-        myproc()->killed = 1;
-        exit();
-    }
-    if (md->flags & MAP_ANON)
-    {
-    }
-    else
-    {
-        char *buff = kalloc();
-        memset(buff, 0, PGSIZE);
-        mmap_read(md->f, buff, PGSIZE);
-        memmove(mem, buff, PGSIZE);
-    }
-}
-
-void allocatePageGuard(struct proc *proc, struct mmap_desc *md, long addr_head, int i)
-{
-    // see if we can grow up by one page
-
-    if (proc->mmaps[i + 1].valid)
-    {
-        // sadly we cannot
-        cprintf("Segmentation Fault\n");
-        proc->killed = 1;
-    }
-    else
-    {
-        md->guard_page = false;
-        // alloc this
-        char *mem = kalloc();
-        if (mem == NULL)
-            panic("kalloc");
-        memset(mem, 0, PGSIZE);
-        addr_head = PGROUNDDOWN(addr_head);
-        if (mappages(proc->pgdir, (void *)addr_head, PGSIZE, V2P(mem), md->prot | PTE_U) != 0)
-        {
-            panic("mappapges");
-            kfree(mem);
-            proc-> killed = 1;
-        }
-        // set the mmaps[i+1] to be the new guard_page
-        proc->mmaps[i + 1].valid = true;
-        proc->mmaps[i + 1].guard_page = true;
-        if (md->flags & MAP_ANON)
-        {
-        }
-        else
-        {
-            char *buff = kalloc();
-            memset(buff, 0, PGSIZE);
-            mmap_read(md->f, buff, PGSIZE);
-            memmove(mem, buff, PGSIZE);
-        }
-    }
+    md->length = 0;
+    md->virtualAddress = 0;
+    md->flags = 0;
+    md->prot = 0;
+    md->dirty = 0;
+    md->shared = 0;
+    md->valid = 0;
+    md->guard_page = 0;
+    md->f = NULL;
+    md->already_alloced = 0;
+    if(md->page == 0) return;
+    kfree(md->page);
+    md->page = 0;
 }
 
 // Copy mmaps from parent to child process
@@ -296,6 +320,7 @@ int copy_maps(struct proc *parent, struct proc *child)
         uint parentPage = get_physical_page(parent, virt_addr, &pte);
         if (isshared)
         {
+
             if(parentPage == 0) {
                 //since we are doing lazy alloc, it hasn't been faulted yet, but we have to 
                 //share it, so we are going to allocate it, however, if its mapsgrowup, then 
@@ -319,6 +344,9 @@ int copy_maps(struct proc *parent, struct proc *child)
                 // ERROR: Shared mappages failed
                 panic("mappages");
             }
+            md_c->ref = 2;
+            md_p->ref = 2;
+            md_c->page = md_p->page;
         }
         else
         {
@@ -339,7 +367,10 @@ int copy_maps(struct proc *parent, struct proc *child)
                 panic("ahahah");
             }
             memmove(mem, pmem, PGSIZE);
+            md_c->ref = 1;
+            md_c->page = mem;
         }
+
         deep_copy(md_p, md_c);
     }
     return 0;
@@ -435,7 +466,22 @@ void exit(void)
                 wakeup1(initproc);
         }
     }
+    for(int i = 0; i < PAGE_LIMIT; i++) {
+        if(!curproc->mmaps[i].valid) { continue;}
+        struct mmap_desc* md = &curproc->mmaps[i];
+        if (md->f != NULL) {
+        if (md->flags & MAP_PRIVATE)
+        {
+        }
+        else
+        {
+            filewrite(md->f, (char *)md->virtualAddress, PGSIZE);
+        }
 
+        fileclose(md->f);
+        }
+        munmap_free(md);
+    }
     // Jump into the scheduler, never to return.
     curproc->state = ZOMBIE;
     sched();

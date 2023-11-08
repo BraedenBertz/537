@@ -59,29 +59,7 @@ fdalloc(struct file *f)
 }
 // make a function that makes a deep copy of mmap_desc
 
-void munmap_free(struct mmap_desc* md, int addr, int length){
-    //cprintf("In sysfile.c gonna run logic for munmap and free the mmap_desc struct\n");
-    int length_check = 0;
-    for(int i = 0; i < PAGE_LIMIT; i++)
-    {
-        if(md->virtualAddress == addr)
-        {
-            if(length_check >= length)
-                break;
-            length_check++;
-            md->length = 0;
-            md->virtualAddress = 0;
-            md->flags = 0;
-            md->prot = 0;
-            md->dirty = 0;
-            md->shared = 0;
-            md->valid = 0;
-            md->guard_page = 0;
-            md->f = NULL;
-            md->already_alloced = 0;
-        }   
-    }
-}
+
 
 void munmap()
 {
@@ -142,7 +120,10 @@ int sys_munmap(void)
         fileclose(md->f);
     }
     
-    munmap_free(myproc()->mmaps, addr, length);
+    for(int i = 0; i < j; i++) {
+        munmap_free(to_free[i]);
+    }
+    
 
     return 0;
 }
@@ -230,6 +211,7 @@ int sys_mmap(void)
         md->dirty = false;
         md->flags = flags;
         md->prot = prot;
+        md->ref = 1;
         if(j == i+run-1 && flags & MAP_GROWSUP) md->guard_page = true;
         else md->guard_page = false;
         if (!(flags & MAP_ANON))

@@ -1,3 +1,4 @@
+#include "mmap.h"
 struct buf;
 struct context;
 struct file;
@@ -9,11 +10,9 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
-
-
+void munmap_free(struct mmap_desc *md);
     // bio.c
-    void
-    binit(void);
+    void binit(void);
 struct buf*     bread(uint, uint);
 void            brelse(struct buf*);
 void            bwrite(struct buf*);
