@@ -1,7 +1,22 @@
 
 #ifndef PROXYSERVER_H
 #define PROXYSERVER_H
-
+#include <arpa/inet.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <pthread.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
 typedef enum scode {
     OK = 200,           // ok
     BAD_REQUEST = 400,  // bad request
