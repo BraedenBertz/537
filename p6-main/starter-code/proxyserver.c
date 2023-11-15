@@ -189,7 +189,10 @@ void serve_forever(int *server_fd) {
         printf("Listening on port %d...\n", proxy_port);
         //create a thread for each listener
         pthread_t* p = (pthread_t*) malloc(sizeof(pthread_t));
-        if(pthread_create(p, NULL, thread_entrance, (void*)(server_fd)) != 0) {
+        int *server_fd_copy = (int *)malloc(sizeof(int));
+        *server_fd_copy = *server_fd;
+        if (pthread_create(p, NULL, thread_entrance, (void *)(server_fd_copy)) != 0)
+        {
             exit(-1);
         }
         listener_threads[i] = p;
