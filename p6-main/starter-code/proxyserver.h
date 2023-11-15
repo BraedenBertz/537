@@ -1,9 +1,29 @@
+#ifndef http_request_h
+#define http_request_h
+struct http_request
+{
+    char *method;
+    char *path;
+    char *delay;
+};
+#endif
+
+#ifndef pq_h
+#define pq_h
+#define MAX_STORAGE_FOR_REQUESTS 64
+#define MAX_PRIORITY_LEVELS 16
+struct priority_queue
+{
+    pthread_mutex_t *levelLocks;
+    int *numFilled;
+    struct http_request **levels;
+};
+#endif
 
 #ifndef PROXYSERVER_H
 #define PROXYSERVER_H
 
-#define MAX_STORAGE_FOR_REQUESTS 64
-#define MAX_PRIORITY_LEVELS 16
+
 
 typedef enum scode {
     OK = 200,           // ok
@@ -16,36 +36,8 @@ typedef enum scode {
 
 #define GETJOBCMD "/GetJob"
 
-/*
- * A simple HTTP library.
- *
- * Usage example:
- *
- *     // Returns NULL if an error was encountered.
- *     struct http_request *request = http_request_parse(fd);
- *
- *     ...
- *
- *     http_start_response(fd, 200);
- *     http_send_header(fd, "Content-type", http_get_mime_type("index.html"));
- *     http_send_header(fd, "Server", "httpserver/1.0");
- *     http_end_headers(fd);
- *     http_send_string(fd, "<html><body><a href='/'>Home</a></body></html>");
- *
- *     close(fd);
- */
+extern struct priority_queue pq;
 
-
-/*
- * Functions for parsing an HTTP request.
- */
-struct http_request {
-    char *method;
-    char *path;
-    char *delay;
-};
-
-//extern struct http_request priority_queue[MAX_PRIORITY_LEVELS][MAX_STORAGE_FOR_REQUESTS];
 
 /*
  * Functions for sending an HTTP response.

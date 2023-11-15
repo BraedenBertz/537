@@ -13,9 +13,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
 #include "proxyserver.h"
+#include "safequeue.h"
 
+struct priority_queue pq;
 
 /*
  * Constants
@@ -124,8 +125,12 @@ void* thread_entrance(void* a) {
         printf("Accepted connection from %s on port %d\n",
                inet_ntoa(client_address.sin_addr),
                client_address.sin_port);
-
-        serve_request(client_fd);
+        printf("trying to put the request in a priority queue\n");
+        //serve_request(client_fd);
+        struct http_request* client_request;
+        client_request = http_request_parse(client_fd);
+        printf("Priority is %s\n", client_request->path);
+        
 
         // close the connection to the client
         shutdown(client_fd, SHUT_WR);
@@ -297,6 +302,7 @@ int main(int argc, char **argv) {
         }
     }
     print_settings();
+    create_queue(&pq, max_queue_size);
     serve_forever(&server_fd);
 
     return EXIT_SUCCESS;
