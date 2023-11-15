@@ -3,8 +3,19 @@
 #include <stdio.h>
 #include "safequeue.h"
 
-void create_queue(struct priority_queue* pq, int q)
+void print_pq(struct priority_queue *pq)
 {
+    for(int i = 0; i < pq->q; i++) {
+        if(pq->numFilled[i] != 0) {
+            printf("%d: %s\n", i, pq->levels[i][0].path);
+        }
+    }
+}
+
+void create_queue(struct priority_queue *pq, int q)
+{
+    printf("creating queue\n");
+    pq->q = q;
     pq->levelLocks = (pthread_mutex_t*) malloc(q*sizeof(pthread_mutex_t));
     if (pq->levelLocks == NULL) {
         printf("levellocks");
@@ -32,8 +43,12 @@ void create_queue(struct priority_queue* pq, int q)
     }
 }
 
-void add_work(int priority)
+void add_work(struct priority_queue *pq, struct http_request* r, int priority)
 {
+    printf("adding to queue at level %d, the content: %s\n", priority, r->path);
+    pq->levels[priority-1][0] = *r;
+    pq->numFilled[priority-1]++;
+    printf("added to queue successfully\n");
     //acquire the lock to the priority level, if we can't, then go ahead and do nothing
     //acquiring the lock is like so (if prioity is 1, then get locks[1]);
     //assuming we have the lock, go ahead and see if numfilled is equal to max size

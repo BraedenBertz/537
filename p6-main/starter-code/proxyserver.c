@@ -129,9 +129,16 @@ void* thread_entrance(void* a) {
         //serve_request(client_fd);
         struct http_request* client_request;
         client_request = http_request_parse(client_fd);
-        printf("Priority is %s\n", client_request->path);
-        
-
+        if(client_request->path[1] == '-') {
+            print_pq(&pq);
+        } else {
+            printf("%c\n", client_request->path[1]);
+            int priority = 0;
+            if (1 == sscanf(client_request->path, "%*[^0123456789]%d", &priority))
+                printf("Priority is %d\n", priority);
+            add_work(&pq, client_request, priority);
+        }
+        //wait for the worker thread to wake us up
         // close the connection to the client
         shutdown(client_fd, SHUT_WR);
         close(client_fd);
@@ -191,7 +198,7 @@ void serve_forever(int *server_fd) {
             exit(errno);
         }
 
-        printf("Listening on port %d...\n", proxy_port);
+        printf("Listening on port %d[%d]...\n", proxy_port, i);
         //create a thread for each listener
         pthread_t* p = (pthread_t*) malloc(sizeof(pthread_t));
         int *server_fd_copy = (int *)malloc(sizeof(int));
@@ -255,7 +262,6 @@ void exit_with_usage() {
     exit(EXIT_SUCCESS);
 }
 
-struct http_request priority_queue[MAX_PRIORITY_LEVELS][MAX_STORAGE_FOR_REQUESTS];
 
 int main(int argc, char **argv) {
     signal(SIGINT, signal_callback_handler);
@@ -274,14 +280,12 @@ int main(int argc, char **argv) {
             for (int j = 0; j < num_listener; j++)
             {
                 listener_ports[j] = atoi(argv[++i]);
-                printf("%d\n", listener_ports[j]);
             }
 
         }
         else if (strcmp("-w", argv[i]) == 0)
         {
             num_workers = atoi(argv[++i]);
-            printf("%d\n", num_workers);
         }
         else if (strcmp("-q", argv[i]) == 0)
         {

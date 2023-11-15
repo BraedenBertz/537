@@ -17,6 +17,7 @@ struct priority_queue
     pthread_mutex_t *levelLocks;
     int *numFilled;
     struct http_request **levels;
+    int q;
 };
 #endif
 
