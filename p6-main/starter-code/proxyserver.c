@@ -105,8 +105,7 @@ void serve_request(int client_fd) {
 }
 
 void* thread_entrance(void* a) {
-    int* server_fd = (int*) a;   
-
+    int* server_fd = (int*) a;
     // make the threads
     struct sockaddr_in client_address;
     size_t client_address_length = sizeof(client_address);
@@ -143,6 +142,8 @@ int server_fd;
  */
 void serve_forever(int *server_fd) {
 
+    pthread_t* listener_threads[num_listener];
+
     for (int i = 0; i < num_listener; i++)
     {
         // create a socket to listen
@@ -162,8 +163,6 @@ void serve_forever(int *server_fd) {
             exit(errno);
         }
 
-
-    
         int proxy_port = listener_ports[i];
         // create the full address of this proxyserver
         struct sockaddr_in proxy_address;
@@ -171,7 +170,7 @@ void serve_forever(int *server_fd) {
         proxy_address.sin_family = AF_INET;
         proxy_address.sin_addr.s_addr = INADDR_ANY;
         proxy_address.sin_port = htons(proxy_port); // listening port
-        printf("server fd:%d | sin_port: %d | size: %ld\n", *server_fd, proxy_address.sin_port, sizeof(proxy_address));
+
         // bind the socket to the address and port number specified in
         if (bind(*server_fd, (struct sockaddr *)&proxy_address,
                     sizeof(proxy_address)) == -1)
@@ -188,7 +187,16 @@ void serve_forever(int *server_fd) {
         }
 
         printf("Listening on port %d...\n", proxy_port);
+        //create a thread for each listener
+        pthread_t* p = (pthread_t*) malloc(sizeof(pthread_t));
+        if(pthread_create(p, NULL, thread_entrance, (void*)(server_fd)) != 0) {
+            exit(-1);
+        }
+        listener_threads[i] = p;
     }
+
+    void * null;
+    pthread_join(*listener_threads[0], &null);
     shutdown(*server_fd, SHUT_RDWR);
     close(*server_fd);
 }
@@ -237,13 +245,6 @@ char *USAGE =
 void exit_with_usage() {
     fprintf(stderr, "%s", USAGE);
     exit(EXIT_SUCCESS);
-}
-
-void *serve_forever_thread_entrance (void* a) {
-    int* i = (int*) malloc(sizeof(int));
-    *i = *(int*)(a);
-    serve_forever(i);
-    return NULL;
 }
 
 struct http_request priority_queue[MAX_PRIORITY_LEVELS][MAX_STORAGE_FOR_REQUESTS];
