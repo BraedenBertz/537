@@ -104,62 +104,20 @@ void serve_request(int client_fd) {
     free(buffer);
 }
 
+void* thread_entrance(void* a) {
+    int* server_fd = (int*) a;   
 
-int server_fd;
-/*
- * opens a TCP stream socket on all interfaces with port number PORTNO. Saves
- * the fd number of the server socket in *socket_number. For each accepted
- * connection, calls request_handler with the accepted fd number.
- */
-void serve_forever(int *server_fd) {
-
-    // create a socket to listen
-    *server_fd = socket(PF_INET, SOCK_STREAM, 0);
-    if (*server_fd == -1) {
-        perror("Failed to create a new socket");
-        exit(errno);
-    }
-
-    // manipulate options for the socket
-    int socket_option = 1;
-    if (setsockopt(*server_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option,
-                   sizeof(socket_option)) == -1) {
-        perror("Failed to set socket options");
-        exit(errno);
-    }
-
-
-    int proxy_port = listener_ports[0];
-    // create the full address of this proxyserver
-    struct sockaddr_in proxy_address;
-    memset(&proxy_address, 0, sizeof(proxy_address));
-    proxy_address.sin_family = AF_INET;
-    proxy_address.sin_addr.s_addr = INADDR_ANY;
-    proxy_address.sin_port = htons(proxy_port); // listening port
-
-    // bind the socket to the address and port number specified in
-    if (bind(*server_fd, (struct sockaddr *)&proxy_address,
-             sizeof(proxy_address)) == -1) {
-        perror("Failed to bind on socket");
-        exit(errno);
-    }
-
-    // starts waiting for the client to request a connection
-    if (listen(*server_fd, 1024) == -1) {
-        perror("Failed to listen on socket");
-        exit(errno);
-    }
-
-    printf("Listening on port %d...\n", proxy_port);
-
+    // make the threads
     struct sockaddr_in client_address;
     size_t client_address_length = sizeof(client_address);
     int client_fd;
-    while (1) {
+    while (1)
+    {
         client_fd = accept(*server_fd,
                            (struct sockaddr *)&client_address,
                            (socklen_t *)&client_address_length);
-        if (client_fd < 0) {
+        if (client_fd < 0)
+        {
             perror("Error accepting socket");
             continue;
         }
@@ -174,10 +132,67 @@ void serve_forever(int *server_fd) {
         shutdown(client_fd, SHUT_WR);
         close(client_fd);
     }
+    return NULL;
+}
 
+int server_fd;
+/*
+ * opens a TCP stream socket on all interfaces with port number PORTNO. Saves
+ * the fd number of the server socket in *socket_number. For each accepted
+ * connection, calls request_handler with the accepted fd number.
+ */
+void serve_forever(int *server_fd) {
+
+    for (int i = 0; i < num_listener; i++)
+    {
+        // create a socket to listen
+        *server_fd = socket(PF_INET, SOCK_STREAM, 0);
+        if (*server_fd == -1)
+        {
+            perror("Failed to create a new socket");
+            exit(errno);
+        }
+
+        // manipulate options for the socket
+        int socket_option = 1;
+        if (setsockopt(*server_fd, SOL_SOCKET, SO_REUSEADDR, &socket_option,
+                       sizeof(socket_option)) == -1)
+        {
+            perror("Failed to set socket options");
+            exit(errno);
+        }
+
+
+    
+        int proxy_port = listener_ports[i];
+        // create the full address of this proxyserver
+        struct sockaddr_in proxy_address;
+        memset(&proxy_address, 0, sizeof(proxy_address));
+        proxy_address.sin_family = AF_INET;
+        proxy_address.sin_addr.s_addr = INADDR_ANY;
+        proxy_address.sin_port = htons(proxy_port); // listening port
+        printf("server fd:%d | sin_port: %d | size: %ld\n", *server_fd, proxy_address.sin_port, sizeof(proxy_address));
+        // bind the socket to the address and port number specified in
+        if (bind(*server_fd, (struct sockaddr *)&proxy_address,
+                    sizeof(proxy_address)) == -1)
+        {
+            perror("Failed to bind on socket");
+            exit(errno);
+        }
+
+        // starts waiting for the client to request a connection
+        if (listen(*server_fd, 1024) == -1)
+        {
+            perror("Failed to listen on socket");
+            exit(errno);
+        }
+
+        printf("Listening on port %d...\n", proxy_port);
+    }
     shutdown(*server_fd, SHUT_RDWR);
     close(*server_fd);
 }
+
 
 /*
  * Default settings for in the global configuration variables
@@ -201,7 +216,7 @@ void print_settings() {
     for (int i = 0; i < num_listener; i++)
         printf(" %d", listener_ports[i]);
     printf(" ]\n");
-    printf("\t%d workers\n", num_listener);
+    printf("\t%d workers\n", num_workers);
     printf("\tfileserver ipaddr %s port %d\n", fileserver_ipaddr, fileserver_port);
     printf("\tmax queue size  %d\n", max_queue_size);
     printf("\t  ----\t----\t\n");
@@ -224,6 +239,15 @@ void exit_with_usage() {
     exit(EXIT_SUCCESS);
 }
 
+void *serve_forever_thread_entrance (void* a) {
+    int* i = (int*) malloc(sizeof(int));
+    *i = *(int*)(a);
+    serve_forever(i);
+    return NULL;
+}
+
+struct http_request priority_queue[MAX_PRIORITY_LEVELS][MAX_STORAGE_FOR_REQUESTS];
+
 int main(int argc, char **argv) {
     signal(SIGINT, signal_callback_handler);
 
@@ -231,29 +255,44 @@ int main(int argc, char **argv) {
     default_settings();
 
     int i;
-    for (i = 1; i < argc; i++) {
-        if (strcmp("-l", argv[i]) == 0) {
+    for (i = 1; i < argc; i++)
+    {
+        if (strcmp("-l", argv[i]) == 0)
+        {
             num_listener = atoi(argv[++i]);
             free(listener_ports);
             listener_ports = (int *)malloc(num_listener * sizeof(int));
-            for (int j = 0; j < num_listener; j++) {
+            for (int j = 0; j < num_listener; j++)
+            {
                 listener_ports[j] = atoi(argv[++i]);
+                printf("%d\n", listener_ports[j]);
             }
-        } else if (strcmp("-w", argv[i]) == 0) {
+
+        }
+        else if (strcmp("-w", argv[i]) == 0)
+        {
             num_workers = atoi(argv[++i]);
-        } else if (strcmp("-q", argv[i]) == 0) {
+            printf("%d\n", num_workers);
+        }
+        else if (strcmp("-q", argv[i]) == 0)
+        {
             max_queue_size = atoi(argv[++i]);
-        } else if (strcmp("-i", argv[i]) == 0) {
+        }
+        else if (strcmp("-i", argv[i]) == 0)
+        {
             fileserver_ipaddr = argv[++i];
-        } else if (strcmp("-p", argv[i]) == 0) {
+        }
+        else if (strcmp("-p", argv[i]) == 0)
+        {
             fileserver_port = atoi(argv[++i]);
-        } else {
+        }
+        else
+        {
             fprintf(stderr, "Unrecognized option: %s\n", argv[i]);
             exit_with_usage();
         }
     }
     print_settings();
-
     serve_forever(&server_fd);
 
     return EXIT_SUCCESS;

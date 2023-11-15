@@ -1,10 +1,6 @@
 #ifndef SAFEQ_H
 #define SAFEQ_H
 
-#define MAX_STORAGE_FOR_REQUESTS 64
-#define MAX_PRIORITY_LEVELS 16
-
-void* priority_queue[MAX_PRIORITY_LEVELS][MAX_STORAGE_FOR_REQUESTS];
 // Create a new priority queue
 extern void create_queue();
 // When a new request comes in, you will insert it in priority order.

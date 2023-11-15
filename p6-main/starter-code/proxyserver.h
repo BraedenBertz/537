@@ -2,6 +2,9 @@
 #ifndef PROXYSERVER_H
 #define PROXYSERVER_H
 
+#define MAX_STORAGE_FOR_REQUESTS 64
+#define MAX_PRIORITY_LEVELS 16
+
 typedef enum scode {
     OK = 200,           // ok
     BAD_REQUEST = 400,  // bad request
@@ -41,6 +44,8 @@ struct http_request {
     char *path;
     char *delay;
 };
+
+//extern struct http_request priority_queue[MAX_PRIORITY_LEVELS][MAX_STORAGE_FOR_REQUESTS];
 
 /*
  * Functions for sending an HTTP response.
