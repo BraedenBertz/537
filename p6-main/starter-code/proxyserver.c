@@ -50,7 +50,7 @@ void send_error_response(int client_fd, status_code_t err_code, char *err_msg) {
  * forward the fileserver response to the client
  */
 void serve_request(int client_fd) {
-
+    //printf("starting serve_request\n");
     // create a fileserver socket
     int fileserver_fd = socket(PF_INET, SOCK_STREAM, 0);
     if (fileserver_fd == -1) {
@@ -76,10 +76,11 @@ void serve_request(int client_fd) {
 
     // successfully connected to the file server
     char *buffer = (char *)malloc(RESPONSE_BUFSIZE * sizeof(char));
-
+    //printf("B\n");
     // forward the client request to the fileserver
-    int bytes_read = read(client_fd, buffer, RESPONSE_BUFSIZE);
+    int bytes_read = recv(client_fd, buffer, RESPONSE_BUFSIZE, 0);
     int ret = http_send_data(fileserver_fd, buffer, bytes_read);
+    //printf("B2\n");
     if (ret < 0) {
         printf("Failed to send request to the file server\n");
         send_error_response(client_fd, BAD_GATEWAY, "Bad Gateway");
@@ -96,7 +97,7 @@ void serve_request(int client_fd) {
             }
         }
     }
-
+    //printf("C\n");
     // close the connection to the fileserver
     shutdown(fileserver_fd, SHUT_WR);
     close(fileserver_fd);
@@ -105,19 +106,45 @@ void serve_request(int client_fd) {
     free(buffer);
 }
 
+void*
+workerThreadEntrance(void* fd) {
+    while(1) {
+        //printf("trying to get work\n");
+        struct http_request* topPriority = get_work(&pq);
+        //printf("about to serve request to %d\n", topPriority->fd);
+        serve_request(topPriority->fd);
+        //printf("trying to get signaling lock to wake up listener thread\n");
+        //printf("shutting down client fd\n");
+        shutdown(topPriority->fd, SHUT_WR);
+        close(topPriority->fd);
+        // while(pthread_mutex_lock(&topPriority->signalingLock)) {
+        //     printf("cannot acquire lock\n");
+        //     sched_yield();
+        // }
+        // pthread_cond_signal(&topPriority->listenerCondVar);
+        // pthread_mutex_unlock(&topPriority->signalingLock);
+        if (topPriority->delay != NULL)
+        {
+            int sleepNum = atoi(topPriority->delay);
+            if(sleepNum < 0) continue;
+            else sleep(sleepNum);
+        }
+    }
+}
+
 void 
-createAndReturnQUEUE_EMPTY(struct http_request r, int fd) {
+createAndReturnQUEUE_EMPTY(int fd) {
     http_start_response(fd, QUEUE_EMPTY);
     http_end_headers(fd);
     http_send_string(fd, "Nothing to dequeue\n");
 }
 
 void
-createAndReturn200(struct http_request r, int fd)
+createAndReturn200(struct http_request* r, int fd)
 {
     http_start_response(fd, 200);
     http_end_headers(fd);
-    http_send_string(fd, r.path);
+    http_send_string(fd, r->path);
 }
 
 void *
@@ -147,27 +174,39 @@ thread_entrance(void *a)
         struct http_request* client_request;
         client_request = http_request_parse(client_fd);
         if(strcmp(client_request->path, GETJOBCMD) == 0) {
-            printf("taking out of prioity queue\n");
+            //printf("taking out of prioity queue\n");
             print_pq(&pq);
-            struct http_request topRequest = get_work(&pq);
-            if(topRequest.path != NULL) {
+            struct http_request* topRequest = get_work_nonblocking(&pq);
+            if(topRequest->path != NULL) {
                 createAndReturn200(topRequest, client_fd);
             } else {
-                createAndReturnQUEUE_EMPTY(topRequest, client_fd);
+                createAndReturnQUEUE_EMPTY(client_fd);
             }
-            printf("took out of pq\n");
+            //printf("took out of pq\n");
+            //printf("shutting down client fd\n");
+            shutdown(client_fd, SHUT_WR);
+            close(client_fd);
         } else {
-            printf("trying to put the request in a priority queue\n");
+            //printf("trying to put the request in a priority queue\n");
             int priority = 0;
             if (1 == sscanf(client_request->path, "%*[^0123456789]%d", &priority))
                 printf("Priority is %d\n", priority);
+            else return NULL;
+            client_request->fd = client_fd;
             add_work(&pq, client_request, priority);
+            //wakeup some worker threads, if they are sleeping
+            //pthread_mutex_init(&client_request->signalingLock, NULL);
+            //pthread_mutex_lock(&client_request->signalingLock);
+            pthread_cond_broadcast(&workerCondVar);
+            //wait for the worker to signal that they finished returning the http
+            //pthread_cond_wait(&client_request->listenerCondVar, &client_request->signalingLock);
+
+            //pthread_mutex_unlock(&client_request->signalingLock);
+            //printf("awaken, closing fd now\n");
         }
         //wait for the worker thread to wake us up
         // close the connection to the client
-        printf("shutting down client fd\n");
-        shutdown(client_fd, SHUT_WR);
-        close(client_fd);
+        
     }
     return NULL;
 }
@@ -288,8 +327,21 @@ void exit_with_usage() {
     exit(EXIT_SUCCESS);
 }
 
+void create_worker_threads(int nw) {
+    pthread_t *p; 
+    for(int i = 0; i < nw; i++) {
+        p = (pthread_t *)malloc(sizeof(pthread_t));
+        if (pthread_create(p, NULL, workerThreadEntrance, (void *)(NULL)) != 0)
+        {
+            exit(-1);
+        }
+    }
+    printf("created %d worker threads\n", nw);
+}
 
-int main(int argc, char **argv) {
+int
+main(int argc, char **argv)
+{
     signal(SIGINT, signal_callback_handler);
 
     /* Default settings */
@@ -333,6 +385,7 @@ int main(int argc, char **argv) {
     }
     print_settings();
     create_queue(&pq, max_queue_size);
+    create_worker_threads(num_workers);
     serve_forever(&server_fd);
 
     return EXIT_SUCCESS;

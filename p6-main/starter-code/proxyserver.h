@@ -5,7 +5,9 @@ struct http_request
     char *method;
     char *path;
     char *delay;
-    pthread_cond_t lock;
+    pthread_cond_t listenerCondVar;
+    pthread_mutex_t signalingLock;
+    int fd;
 };
 #endif
 
@@ -17,7 +19,7 @@ struct priority_queue
 {
     pthread_mutex_t *levelLocks;
     int *numFilled;
-    struct http_request **levels;
+    struct http_request ***levels;
     int q;
 };
 #endif
@@ -37,9 +39,8 @@ typedef enum scode {
 } status_code_t;
 
 #define GETJOBCMD "/GetJob"
-
+extern pthread_cond_t workerCondVar;
 extern struct priority_queue pq;
-
 
 /*
  * Functions for sending an HTTP response.
@@ -93,8 +94,7 @@ struct http_request *http_request_parse(int fd) {
 
     char *read_buffer = malloc(LIBHTTP_REQUEST_MAX_SIZE + 1);
     if (!read_buffer) http_fatal_error("Malloc failed");
-
-    int bytes_read = read(fd, read_buffer, LIBHTTP_REQUEST_MAX_SIZE);
+    int bytes_read = recv(fd, read_buffer, LIBHTTP_REQUEST_MAX_SIZE, MSG_PEEK);
     read_buffer[bytes_read] = '\0'; /* Always null-terminate. */
 
     char *read_start, *read_end;

@@ -5,7 +5,9 @@ struct http_request
     char *method;
     char *path;
     char *delay;
-    pthread_cond_t lock;
+    pthread_cond_t listenerCondVar;
+    pthread_mutex_t signalingLock;
+    int fd;
 };
 #endif
 
@@ -17,12 +19,13 @@ struct priority_queue
 {
     pthread_mutex_t* levelLocks;
     int* numFilled;
-    struct http_request** levels;
+    struct http_request*** levels;
     int q;
 };
 #endif
 #ifndef SAFEQ_H
 #define SAFEQ_H
+
 extern void print_pq(struct priority_queue* pq);
 
 // Create a new priority queue
@@ -32,9 +35,9 @@ extern void add_work(struct priority_queue *pq, struct http_request *r, int prio
 
 // The worker threads will call a Blocking version of remove, where if there are no elements in the queue,
 // they will block until an item is added. You can implement this using condition variables.
-extern struct http_request get_work(struct priority_queue *pq);
+extern struct http_request *get_work(struct priority_queue *pq);
 // The listener threads should call a Non-Blocking function to get the highest priority job. If there 
 //are no elements on the queue, they will simply return and send an error message to the client.
-extern struct http_request get_work_nonblocking(struct priority_queue *pq);
+extern struct http_request *get_work_nonblocking(struct priority_queue *pq);
 
 #endif
