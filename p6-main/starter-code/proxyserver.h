@@ -5,6 +5,7 @@ struct http_request
     char *method;
     char *path;
     char *delay;
+    pthread_cond_t lock;
 };
 #endif
 

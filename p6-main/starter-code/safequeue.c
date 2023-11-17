@@ -6,8 +6,11 @@
 void print_pq(struct priority_queue *pq)
 {
     for(int i = 0; i < pq->q; i++) {
-        if(pq->numFilled[i] != 0) {
-            printf("%d: %s\n", i, pq->levels[i][0].path);
+        if(pq->numFilled[i] == 0) {
+            continue;
+        }
+        for(int j = 0; j < pq->numFilled[i]; j++) {
+            printf("%d: %s\n", i, pq->levels[i][j].path);
         }
     }
 }
@@ -16,12 +19,12 @@ void create_queue(struct priority_queue *pq, int q)
 {
     printf("creating queue\n");
     pq->q = q;
-    pq->levelLocks = (pthread_mutex_t*) malloc(q*sizeof(pthread_mutex_t));
+    pq->levelLocks = (pthread_mutex_t *)malloc(MAX_PRIORITY_LEVELS * sizeof(pthread_mutex_t));
     if (pq->levelLocks == NULL) {
         printf("levellocks");
         exit(-1);
     }
-    pq->numFilled = (int *)calloc(q, sizeof(int));
+    pq->numFilled = (int *)calloc(MAX_PRIORITY_LEVELS, sizeof(int));
     if (pq->numFilled == NULL)
     {
         printf("numFilled");
@@ -45,33 +48,86 @@ void create_queue(struct priority_queue *pq, int q)
 
 void add_work(struct priority_queue *pq, struct http_request* r, int priority)
 {
+    // acquire the lock to the priority level, if we can't, then go ahead and do nothing
+    // acquiring the lock is like so (if prioity is 1, then get locks[1]);
+
+    // assuming we have the lock, go ahead and see if numfilled is equal to max size
+    if(pq->numFilled[priority-1] == pq->q) {
+        // if it is, then we cannot add this request
+        return;
+    }
+    // if its not, add to the appropriate level
     printf("adding to queue at level %d, the content: %s\n", priority, r->path);
-    pq->levels[priority-1][0] = *r;
+    pq->levels[priority-1][pq->numFilled[priority-1]] = *r;
     pq->numFilled[priority-1]++;
     printf("added to queue successfully\n");
-    //acquire the lock to the priority level, if we can't, then go ahead and do nothing
-    //acquiring the lock is like so (if prioity is 1, then get locks[1]);
-    //assuming we have the lock, go ahead and see if numfilled is equal to max size
-    //if it is, then we cannot add this request
-    //if its not, add to the appropriate level
-
-    //release the lock
+    // release the lock
 }
 
-void get_work()
+void release_request_from_pq(struct priority_queue* pq, int i) {
+    for (int j = 0; j < pq->numFilled[i]; j++)
+    {
+        pq->levels[i][j] = pq->levels[i][j + 1];
+    }
+    pq->numFilled[i]--;
+    // if numfill = 1, then we have
+    // b4: [*][null][null]...
+    // after: [null][null][null]...
+    // if numfill = q then we have
+    // b4: [*][*]...[*][*]
+    // after: [*][*]...[*][null]
+    pq->levels[pq->numFilled[i]] = NULL;
+}
+
+struct http_request get_work(struct priority_queue* pq)
 {
     //psuedocode
-    //in a for loop, acquire a lock for the highest priority level
-    //if we can't, return
-    //assuming we have the lock, see if the numfilled > 0, if so, serve this request
-    //get it out of the priority queue and decrement numfilled
-    //release the lock and return
-
-    //assuming nothing is filled, cond_wait the lock
-    //must do a recheck starting at pseudocode again to see if the buffer is filled btw
+    //in a for loop,
+    for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
+    {
+        // acquire a lock for the highest priority level
+        // assuming we have the lock, see if the numfilled > 0, if so, serve this request
+        if (pq->numFilled[level] != 0)
+        {
+            // get it out of the priority queue and decrement numfilled
+            struct http_request ret = pq->levels[level][0];
+            release_request_from_pq(pq, level); 
+            // release the lock and return
+            printf("returning from level %d\n", level);
+            return ret;
+        }
+    }
+    // assuming nothing is filled, cond_wait the lock
+    // must do a recheck starting at pseudocode again to see if the buffer is filled btw
+    struct http_request dummy;
+    dummy.path = NULL;
+    dummy.method = NULL;
+    printf("returning b/c couldn't find anything to take\n");
+    return dummy;
 }
 
-void get_work_nonblocking()
+struct http_request get_work_nonblocking(struct priority_queue *pq)
 {
-    //very similar to get_work, except at the end, if we didn't return, then we just send an error message
+    // very similar to get_work, except at the end, if we didn't return, then we just send an error message
+    // psuedocode
+    // in a for loop,
+    for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
+    {
+        // acquire a lock for the highest priority level
+        // assuming we have the lock, see if the numfilled > 0, if so, serve this request
+        if (pq->numFilled[level] != 0)
+        {
+            // get it out of the priority queue and decrement numfilled
+            struct http_request ret = pq->levels[level][0];
+            release_request_from_pq(pq, level);
+            // release the lock and return
+            return ret;
+        }
+    }
+    // assuming nothing is filled, cond_wait the lock
+    // must do a recheck starting at pseudocode again to see if the buffer is filled btw
+    struct http_request dummy;
+    dummy.path = NULL;
+    dummy.method = NULL;
+    return dummy;
 }

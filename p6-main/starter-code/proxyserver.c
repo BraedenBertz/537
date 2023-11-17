@@ -105,7 +105,24 @@ void serve_request(int client_fd) {
     free(buffer);
 }
 
-void* thread_entrance(void* a) {
+void 
+createAndReturnQUEUE_EMPTY(struct http_request r, int fd) {
+    http_start_response(fd, QUEUE_EMPTY);
+    http_end_headers(fd);
+    http_send_string(fd, "Nothing to dequeue\n");
+}
+
+void
+createAndReturn200(struct http_request r, int fd)
+{
+    http_start_response(fd, 200);
+    http_end_headers(fd);
+    http_send_string(fd, r.path);
+}
+
+void *
+thread_entrance(void *a)
+{
     int* server_fd = (int*) a;
     // make the threads
     struct sockaddr_in client_address;
@@ -119,20 +136,28 @@ void* thread_entrance(void* a) {
         if (client_fd < 0)
         {
             perror("Error accepting socket");
-            continue;
+            return NULL;
         }
 
         printf("Accepted connection from %s on port %d\n",
                inet_ntoa(client_address.sin_addr),
                client_address.sin_port);
-        printf("trying to put the request in a priority queue\n");
+        
         //serve_request(client_fd);
         struct http_request* client_request;
         client_request = http_request_parse(client_fd);
-        if(client_request->path[1] == '-') {
+        if(strcmp(client_request->path, GETJOBCMD) == 0) {
+            printf("taking out of prioity queue\n");
             print_pq(&pq);
+            struct http_request topRequest = get_work(&pq);
+            if(topRequest.path != NULL) {
+                createAndReturn200(topRequest, client_fd);
+            } else {
+                createAndReturnQUEUE_EMPTY(topRequest, client_fd);
+            }
+            printf("took out of pq\n");
         } else {
-            printf("%c\n", client_request->path[1]);
+            printf("trying to put the request in a priority queue\n");
             int priority = 0;
             if (1 == sscanf(client_request->path, "%*[^0123456789]%d", &priority))
                 printf("Priority is %d\n", priority);
@@ -140,6 +165,7 @@ void* thread_entrance(void* a) {
         }
         //wait for the worker thread to wake us up
         // close the connection to the client
+        printf("shutting down client fd\n");
         shutdown(client_fd, SHUT_WR);
         close(client_fd);
     }
