@@ -22,9 +22,13 @@ struct priority_queue
     struct http_request*** levels;
     int q;
 };
+
 #endif
 #ifndef SAFEQ_H
 #define SAFEQ_H
+
+extern pthread_mutex_t priorityLock[MAX_PRIORITY_LEVELS];
+
 
 extern void print_pq(struct priority_queue* pq);
 

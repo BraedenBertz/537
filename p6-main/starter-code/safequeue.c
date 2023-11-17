@@ -94,17 +94,25 @@ struct http_request* get_work(struct priority_queue* pq)
         for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
         {
             // acquire a lock for the highest priority level
-            // assuming we have the lock, see if the numfilled > 0, if so, serve this request
-            if (pq->numFilled[level] != 0)
-            {
-                //printf("A\n");
-                // get it out of the priority queue and decrement numfilled
-                struct http_request* ret = pq->levels[level][0];
-                release_request_from_pq(pq, level); 
-                // release the lock and return
-                printf("returning from level %d\n", level);
-                return ret;
+            if(pthread_mutex_lock(&priorityLock[level]) == 0){
+                // assuming we have the lock, see if the numfilled > 0, if so, serve this request
+                if (pq->numFilled[level] != 0)
+                {
+                    //printf("A\n");
+                    // get it out of the priority queue and decrement numfilled
+                    struct http_request* ret = pq->levels[level][0];
+                    release_request_from_pq(pq, level); 
+                    // release the lock and return
+                    pthread_mutex_unlock(&priorityLock[level]);
+                    printf("returning from level %d\n", level);
+                    return ret;
+                }
+                // unlock even if the level was clear
+                pthread_mutex_unlock(&priorityLock[level]);
             }
+
+            // assuming we have the lock, see if the numfilled > 0, if so, serve this request
+           
         }
         pthread_mutex_t lock;
         pthread_mutex_init(&lock, NULL);

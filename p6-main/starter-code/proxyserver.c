@@ -17,6 +17,8 @@
 #include "safequeue.h"
 
 struct priority_queue pq;
+pthread_mutex_t priorityLock[MAX_PRIORITY_LEVELS];
+
 
 /*
  * Constants
@@ -194,10 +196,16 @@ thread_entrance(void *a)
             else return NULL;
             client_request->fd = client_fd;
             add_work(&pq, client_request, priority);
+
+
             //wakeup some worker threads, if they are sleeping
             //pthread_mutex_init(&client_request->signalingLock, NULL);
             //pthread_mutex_lock(&client_request->signalingLock);
+
+
             pthread_cond_broadcast(&workerCondVar);
+
+
             //wait for the worker to signal that they finished returning the http
             //pthread_cond_wait(&client_request->listenerCondVar, &client_request->signalingLock);
 
@@ -343,6 +351,11 @@ int
 main(int argc, char **argv)
 {
     signal(SIGINT, signal_callback_handler);
+
+    // initialize priotityLock, each lock must be initialized before use.
+    for(int i = 0; i < MAX_PRIORITY_LEVELS; i++){
+        pthread_mutex_init(&priorityLock[i], NULL);
+    }
 
     /* Default settings */
     default_settings();
