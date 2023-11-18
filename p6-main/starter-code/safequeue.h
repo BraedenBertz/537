@@ -4,7 +4,8 @@ struct http_request
 {
     char *method;
     char *path;
-    char *delay;
+    int delay;
+    int priority;
     pthread_cond_t listenerCondVar;
     pthread_mutex_t signalingLock;
     int fd;

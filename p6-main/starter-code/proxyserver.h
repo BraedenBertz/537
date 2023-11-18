@@ -4,7 +4,8 @@ struct http_request
 {
     char *method;
     char *path;
-    char *delay;
+    int delay;
+    int priority;
     pthread_cond_t listenerCondVar;
     pthread_mutex_t signalingLock;
     int fd;
@@ -147,6 +148,71 @@ struct http_request *http_request_parse(int fd) {
     return NULL;
 }
 
+struct http_request* parse_client_request(int fd)
+{
+    struct http_request *return_value = malloc(sizeof(struct http_request));
+    char *read_buffer = malloc(LIBHTTP_REQUEST_MAX_SIZE + 1);
+    if (!read_buffer)
+        http_fatal_error("Malloc failed");
+
+    int bytes_read = recv(fd, read_buffer, LIBHTTP_REQUEST_MAX_SIZE, MSG_PEEK);
+    read_buffer[bytes_read] = '\0'; /* Always null-terminate. */
+
+    int delay = -1;
+    int priority = -1;
+    char *path = NULL;
+
+    int is_first = 1;
+    size_t size;
+
+    char *token = strtok(read_buffer, "\r\n");
+    while (token != NULL)
+    {
+        size = strlen(token);
+        if (is_first)
+        {
+            is_first = 0;
+            // get path
+            char *s1 = strstr(token, " ");
+            char *s2 = strstr(s1 + 1, " ");
+            size = s2 - s1 - 1;
+            path = strndup(s1 + 1, size);
+
+            if (strcmp(GETJOBCMD, path) == 0)
+            {
+                break;
+            }
+            else
+            {
+                // get priority
+                s1 = strstr(path, "/");
+                s2 = strstr(s1 + 1, "/");
+                size = s2 - s1 - 1;
+                char *p = strndup(s1 + 1, size);
+                priority = atoi(p);
+            }
+        }
+        else
+        {
+            char *value = strstr(token, ":");
+            if (value)
+            {
+                size = value - token - 1; // -1 for space
+                if (strncmp("Delay", token, size) == 0)
+                {
+                    delay = atoi(value + 2); // skip `: `
+                }
+            }
+        }
+        token = strtok(NULL, "\r\n");
+    }
+    return_value->path = path;
+    return_value->delay = delay;
+    return_value->priority = priority;
+    free(read_buffer);
+    return return_value;
+}
+
 char *http_get_response_message(int status_code) {
     switch (status_code) {
     case 100:
@@ -173,6 +239,4 @@ char *http_get_response_message(int status_code) {
         return "Internal Server Error";
     }
 }
-
-
 #endif

@@ -52,7 +52,7 @@ void send_error_response(int client_fd, status_code_t err_code, char *err_msg) {
  * forward the fileserver response to the client
  */
 void serve_request(int client_fd) {
-    //printf("starting serve_request\n");
+    printf("starting serve_request\n");
     // create a fileserver socket
     int fileserver_fd = socket(PF_INET, SOCK_STREAM, 0);
     if (fileserver_fd == -1) {
@@ -111,26 +111,17 @@ void serve_request(int client_fd) {
 void*
 workerThreadEntrance(void* fd) {
     while(1) {
-        //printf("trying to get work\n");
+        printf("trying to get next piece of work\n");
         struct http_request* topPriority = get_work(&pq);
-        //printf("about to serve request to %d\n", topPriority->fd);
+        if (topPriority->delay > 0) {
+            printf("going to sleep for %d\n", topPriority->delay);
+            sleep(topPriority->delay);
+        }
+        printf("serving request\n"); 
         serve_request(topPriority->fd);
-        //printf("trying to get signaling lock to wake up listener thread\n");
-        //printf("shutting down client fd\n");
         shutdown(topPriority->fd, SHUT_WR);
         close(topPriority->fd);
-        // while(pthread_mutex_lock(&topPriority->signalingLock)) {
-        //     printf("cannot acquire lock\n");
-        //     sched_yield();
-        // }
-        // pthread_cond_signal(&topPriority->listenerCondVar);
-        // pthread_mutex_unlock(&topPriority->signalingLock);
-        if (topPriority->delay != NULL)
-        {
-            int sleepNum = atoi(topPriority->delay);
-            if(sleepNum < 0) continue;
-            else sleep(sleepNum);
-        }
+        printf("shutting down fd\n");
     }
 }
 
@@ -147,6 +138,7 @@ createAndReturn200(struct http_request* r, int fd)
     http_start_response(fd, 200);
     http_end_headers(fd);
     http_send_string(fd, r->path);
+    http_send_string(fd, "\n");
 }
 
 void *
@@ -159,6 +151,7 @@ thread_entrance(void *a)
     int client_fd;
     while (1)
     {
+        printf("ready to accept the next request\n");
         client_fd = accept(*server_fd,
                            (struct sockaddr *)&client_address,
                            (socklen_t *)&client_address_length);
@@ -172,49 +165,31 @@ thread_entrance(void *a)
                inet_ntoa(client_address.sin_addr),
                client_address.sin_port);
         
-        //serve_request(client_fd);
         struct http_request* client_request;
-        client_request = http_request_parse(client_fd);
+        client_request = parse_client_request(client_fd);
+        printf("\n\tParsed HTTP request:\n");
+        printf("\tPath: '%s'\n", client_request->path);
+        printf("\tPriority: '%d'\n", client_request->priority);
+        printf("\tDelay: '%d'\n\n", client_request->delay);
         if(strcmp(client_request->path, GETJOBCMD) == 0) {
-            //printf("taking out of prioity queue\n");
-            print_pq(&pq);
             struct http_request* topRequest = get_work_nonblocking(&pq);
-            if(topRequest->path != NULL) {
-                createAndReturn200(topRequest, client_fd);
-            } else {
+            if(topRequest == NULL) {
                 createAndReturnQUEUE_EMPTY(client_fd);
+            } else {
+                createAndReturn200(topRequest, client_fd);
             }
-            //printf("took out of pq\n");
-            //printf("shutting down client fd\n");
             shutdown(client_fd, SHUT_WR);
             close(client_fd);
+            shutdown(topRequest->fd, SHUT_WR);
+            close(topRequest->fd);
         } else {
-            //printf("trying to put the request in a priority queue\n");
-            int priority = 0;
-            if (1 == sscanf(client_request->path, "%*[^0123456789]%d", &priority))
-                printf("Priority is %d\n", priority);
-            else return NULL;
             client_request->fd = client_fd;
-            add_work(&pq, client_request, priority);
-
+            if(client_request->priority < 0) return NULL;
+            add_work(&pq, client_request, client_request->priority);
 
             //wakeup some worker threads, if they are sleeping
-            //pthread_mutex_init(&client_request->signalingLock, NULL);
-            //pthread_mutex_lock(&client_request->signalingLock);
-
-
             pthread_cond_broadcast(&workerCondVar);
-
-
-            //wait for the worker to signal that they finished returning the http
-            //pthread_cond_wait(&client_request->listenerCondVar, &client_request->signalingLock);
-
-            //pthread_mutex_unlock(&client_request->signalingLock);
-            //printf("awaken, closing fd now\n");
         }
-        //wait for the worker thread to wake us up
-        // close the connection to the client
-        
     }
     return NULL;
 }
