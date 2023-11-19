@@ -133,6 +133,13 @@ createAndReturnQUEUE_EMPTY(int fd) {
 }
 
 void
+createAndReturnQUEUE_FULL(int fd) {
+    http_start_response(fd, QUEUE_FULL);
+    http_end_headers(fd);
+    http_send_string(fd, "Nothing to dequeue\n");
+}
+
+void
 createAndReturn200(struct http_request* r, int fd)
 {
     http_start_response(fd, 200);
@@ -185,10 +192,15 @@ thread_entrance(void *a)
         } else {
             client_request->fd = client_fd;
             if(client_request->priority < 0) return NULL;
-            add_work(&pq, client_request, client_request->priority);
-
-            //wakeup some worker threads, if they are sleeping
-            pthread_cond_broadcast(&workerCondVar);
+            int ret = add_work(&pq, client_request, client_request->priority);
+            if(ret == -1){
+                createAndReturnQUEUE_FULL(client_fd);
+                shutdown(client_fd, SHUT_WR);
+                close(client_fd);
+            }
+            // wakeup some worker threads, if they are sleeping
+            else
+                pthread_cond_broadcast(&workerCondVar);
         }
     }
     return NULL;

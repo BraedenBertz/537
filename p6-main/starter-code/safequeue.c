@@ -49,10 +49,17 @@ void create_queue(struct priority_queue *pq, int q)
     }
 }
 
-void add_work(struct priority_queue *pq, struct http_request* r, int priority)
+int add_work(struct priority_queue *pq, struct http_request* r, int priority)
 {
     if (pq == NULL)
-        return;
+        exit(-1);
+    int fill = 0;
+    for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
+    {
+        // assuming we have the lock, see if the numfilled > 0, if so, serve this request
+        fill += pq->numFilled[level];
+    }
+    if(fill >= pq->q) return -1;
     printf("spinning in add_work: %d, %p \n", priority - 1, &priorityLock);
     pthread_mutex_lock(&priorityLock[priority-1]);
     int numberOfAlreadyPresentTasksAtLevel = pq->numFilled[priority - 1];
@@ -60,6 +67,7 @@ void add_work(struct priority_queue *pq, struct http_request* r, int priority)
     pq->numFilled[priority-1]++;
     pthread_mutex_unlock(&priorityLock[priority - 1]);
     printf("unlocking in add_work\n");
+    return 0;
 }
 
 void release_request_from_pq(struct priority_queue* pq, int i) {

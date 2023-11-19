@@ -36,7 +36,7 @@ extern void print_pq(struct priority_queue* pq);
 // Create a new priority queue
 extern void create_queue(struct priority_queue*, int);
 // When a new request comes in, you will insert it in priority order.
-extern void add_work(struct priority_queue *pq, struct http_request *r, int priority);
+extern int add_work(struct priority_queue *pq, struct http_request *r, int priority);
 
 // The worker threads will call a Blocking version of remove, where if there are no elements in the queue,
 // they will block until an item is added. You can implement this using condition variables.
