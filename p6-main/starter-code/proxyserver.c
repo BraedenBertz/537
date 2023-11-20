@@ -52,7 +52,6 @@ void send_error_response(int client_fd, status_code_t err_code, char *err_msg) {
  * forward the fileserver response to the client
  */
 void serve_request(int client_fd) {
-    printf("starting serve_request\n");
     // create a fileserver socket
     int fileserver_fd = socket(PF_INET, SOCK_STREAM, 0);
     if (fileserver_fd == -1) {
@@ -99,7 +98,6 @@ void serve_request(int client_fd) {
             }
         }
     }
-    //printf("C\n");
     // close the connection to the fileserver
     shutdown(fileserver_fd, SHUT_WR);
     close(fileserver_fd);
@@ -111,17 +109,13 @@ void serve_request(int client_fd) {
 void*
 workerThreadEntrance(void* fd) {
     while(1) {
-        printf("trying to get next piece of work\n");
         struct http_request* topPriority = get_work(&pq);
         if (topPriority->delay > 0) {
-            printf("going to sleep for %d\n", topPriority->delay);
             sleep(topPriority->delay);
         }
-        printf("serving request\n"); 
         serve_request(topPriority->fd);
         shutdown(topPriority->fd, SHUT_WR);
         close(topPriority->fd);
-        printf("shutting down fd\n");
     }
 }
 
@@ -331,7 +325,6 @@ void create_worker_threads(int nw) {
             exit(-1);
         }
     }
-    printf("created %d worker threads\n", nw);
 }
 
 int
