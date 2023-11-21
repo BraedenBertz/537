@@ -89,7 +89,7 @@ void release_request_from_pq(struct priority_queue* pq, int i) {
 struct http_request* get_work(struct priority_queue* pq)
 {
     while(1) {
-        for (int level = MAX_PRIORITY_LEVELS-1; level >= 0 ; level--)
+        for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
         {
             // acquire a lock for the highest priority level
             pthread_mutex_lock(&priorityLock[level]);
@@ -120,8 +120,8 @@ struct http_request* get_work(struct priority_queue* pq)
 struct http_request* get_work_nonblocking(struct priority_queue *pq)
 {
     // very similar to get_work, except at the end, if we didn't return, then we just send an error message
-
-    for (int level = MAX_PRIORITY_LEVELS - 1; level >= 0; level--)
+    
+    for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
     {
         // acquire a lock for the highest priority level
         pthread_mutex_lock(&priorityLock[level]);
