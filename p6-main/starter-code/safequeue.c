@@ -17,11 +17,10 @@ void print_pq(struct priority_queue *pq)
 
 void create_queue(struct priority_queue *pq, int q)
 {
-    printf("creating queue\n");
     pq->q = q;
     pq->levelLocks = (pthread_mutex_t *)malloc(MAX_PRIORITY_LEVELS * sizeof(pthread_mutex_t));
     if (pq->levelLocks == NULL) {
-        printf("levellocks");
+        printf("Failure in: levellocks");
         exit(-1);
     }
     for(int i = 0; i < MAX_PRIORITY_LEVELS; i++) {
@@ -30,20 +29,20 @@ void create_queue(struct priority_queue *pq, int q)
     pq->numFilled = (int *)calloc(MAX_PRIORITY_LEVELS, sizeof(int));
     if (pq->numFilled == NULL)
     {
-        printf("numFilled");
+        printf("Failure in: numFilled");
         exit(-1);
     }
     pq->levels = (struct http_request ***)malloc(MAX_PRIORITY_LEVELS * sizeof(struct http_request **));
     if (pq->levels == NULL)
     {
-        printf("levels");
+        printf("Failure in: levels");
         exit(-1);
     }
     for(int i = 0; i < MAX_PRIORITY_LEVELS; i++) {
         pq->levels[i] = (struct http_request **)malloc(q * sizeof(struct http_request*));
         if (pq->levels[i] == NULL)
         {
-            printf("levels[i]");
+            printf("Failure in: levels[i]");
             exit(-1);
         }
     }
@@ -54,19 +53,17 @@ int add_work(struct priority_queue *pq, struct http_request* r, int priority)
     if (pq == NULL)
         exit(-1);
     int fill = 0;
-    for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
+    for (int level = MAX_PRIORITY_LEVELS-1; level >= 0; level--)
     {
         // assuming we have the lock, see if the numfilled > 0, if so, serve this request
         fill += pq->numFilled[level];
     }
     if(fill >= pq->q) return -1;
-    printf("spinning in add_work: %d, %p \n", priority - 1, &priorityLock);
     pthread_mutex_lock(&priorityLock[priority-1]);
     int numberOfAlreadyPresentTasksAtLevel = pq->numFilled[priority - 1];
     pq->levels[priority - 1][numberOfAlreadyPresentTasksAtLevel] = r;
     pq->numFilled[priority-1]++;
     pthread_mutex_unlock(&priorityLock[priority - 1]);
-    printf("unlocking in add_work\n");
     return 0;
 }
 
@@ -102,7 +99,6 @@ struct http_request* get_work(struct priority_queue* pq)
                 release_request_from_pq(pq, level); 
                 // release the lock and return
                 pthread_mutex_unlock(&priorityLock[level]);
-                printf("returning from level %d\n", level);
                 return ret;
             }
             // unlock even if the level was clear
@@ -111,7 +107,6 @@ struct http_request* get_work(struct priority_queue* pq)
         pthread_mutex_t lock;
         pthread_mutex_init(&lock, NULL);
         pthread_mutex_lock(&lock);
-        printf("couldn't find anything, going to sleep\n");
         pthread_cond_wait(&workerCondVar, &lock);
         pthread_mutex_unlock(&lock);
     }
@@ -121,7 +116,7 @@ struct http_request* get_work_nonblocking(struct priority_queue *pq)
 {
     // very similar to get_work, except at the end, if we didn't return, then we just send an error message
     
-    for (int level = 0; level < MAX_PRIORITY_LEVELS; level++)
+    for (int level = MAX_PRIORITY_LEVELS - 1; level >= 0; level--)
     {
         // acquire a lock for the highest priority level
         pthread_mutex_lock(&priorityLock[level]);
@@ -133,7 +128,6 @@ struct http_request* get_work_nonblocking(struct priority_queue *pq)
             release_request_from_pq(pq, level);
             // release the lock and return
             pthread_mutex_unlock(&priorityLock[level]);
-            printf("returning from level %d\n", level);
             return ret;
         }
         // unlock even if the level was clear
